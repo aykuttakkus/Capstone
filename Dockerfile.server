@@ -1,0 +1,33 @@
+FROM python:3.13-slim
+
+ENV PYTHONDONTWRITEBYTECODE=1 \
+    PYTHONUNBUFFERED=1 \
+    PIP_NO_CACHE_DIR=1 \
+    PIP_DISABLE_PIP_VERSION_CHECK=1
+
+WORKDIR /app
+
+ENV BACKEND_HOST=0.0.0.0 \
+    BACKEND_PORT=8000
+
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends build-essential curl gosu \
+    && groupadd --system appuser \
+    && useradd --system --gid appuser --create-home --home-dir /home/appuser appuser \
+    && rm -rf /var/lib/apt/lists/*
+
+COPY requirements.txt .
+RUN pip install -r requirements.txt \
+    && apt-get purge -y --auto-remove build-essential
+
+COPY docker/backend-entrypoint.sh /usr/local/bin/backend-entrypoint.sh
+COPY server /app/server
+
+RUN chmod +x /usr/local/bin/backend-entrypoint.sh \
+    && mkdir -p /app/data/store /app/data/raw /app/data/processed /app/logs \
+    && chown -R appuser:appuser /app/data/store /app/logs
+
+EXPOSE 8000
+
+ENTRYPOINT ["/usr/local/bin/backend-entrypoint.sh"]
+CMD ["python", "-m", "uvicorn", "server.app.main:app", "--host", "0.0.0.0", "--port", "8000", "--timeout-keep-alive", "300"]

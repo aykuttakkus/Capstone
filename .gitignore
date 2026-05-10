@@ -1,0 +1,29 @@
+# Env files
+.env
+client/.env
+
+# Python
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.venv/
+
+# Node / frontend
+client/node_modules/
+client/dist/
+
+# Generated data
+data/processed/
+data/secure/
+data/raw/pdf_inventory_versions/
+data/raw/pdf_inventory*.json
+data/raw/pdf_inventory_history.json
+data/processed/corpus_manifest.json
+data/processed/versions/
+
+# Local artifacts
+.DS_Store
+*.log
+logs/
+tests/eval/baseline_report.json
+.env

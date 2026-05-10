@@ -1,0 +1,105 @@
+services:
+  backend:
+    build:
+      context: .
+      dockerfile: Dockerfile.server
+    container_name: calma-server
+    ports:
+      - "8000:8000"
+    environment:
+      APP_NAME: ${APP_NAME:-Calma}
+      DEPLOYMENT_MODE: ${DEPLOYMENT_MODE:-local}
+      BACKEND_HOST: ${BACKEND_HOST:-0.0.0.0}
+      BACKEND_PORT: ${BACKEND_PORT:-8000}
+      RETRIEVAL_BACKEND: ${RETRIEVAL_BACKEND:-faiss}
+      ENABLE_GRAPH_RAG: ${ENABLE_GRAPH_RAG:-false}
+      GRAPH_RAG_MIN_CHUNKS: ${GRAPH_RAG_MIN_CHUNKS:-400}
+      GRAPH_RAG_MIN_QUERY_TERMS: ${GRAPH_RAG_MIN_QUERY_TERMS:-5}
+      MODEL_CONTRACT_VERSION: ${MODEL_CONTRACT_VERSION:-v1}
+      SENSITIVE_LOG_REDACTION_ENABLED: ${SENSITIVE_LOG_REDACTION_ENABLED:-true}
+      ROLLOUT_MODE: ${ROLLOUT_MODE:-stable}
+      ROLLOUT_TRAFFIC_PERCENT: ${ROLLOUT_TRAFFIC_PERCENT:-0}
+      ENABLE_QDRANT_FALLBACK: ${ENABLE_QDRANT_FALLBACK:-true}
+      ENABLE_OLLAMA_FALLBACK: ${ENABLE_OLLAMA_FALLBACK:-true}
+      ENABLE_RERANKER: ${ENABLE_RERANKER:-true}
+      RERANK_TOP_K: ${RERANK_TOP_K:-3}
+      RERANK_MAX_CHARS: ${RERANK_MAX_CHARS:-1200}
+      QDRANT_URL: ${QDRANT_URL:-http://qdrant:6333}
+      QDRANT_COLLECTION: ${QDRANT_COLLECTION:-calma_chunks}
+      FRONTEND_ORIGINS: ${FRONTEND_ORIGINS:-http://localhost:5173,http://127.0.0.1:5173,http://localhost:8080,http://127.0.0.1:8080}
+      OLLAMA_BASE_URL: ${OLLAMA_BASE_URL:-http://host.docker.internal:11434}
+      OLLAMA_MODEL: ${OLLAMA_MODEL:-mistral:latest}
+      TOP_K: ${TOP_K:-5}
+      EVIDENCE_MIN_SCORE: ${EVIDENCE_MIN_SCORE:-0.15}
+      EVIDENCE_MIN_CHUNKS: ${EVIDENCE_MIN_CHUNKS:-1}
+      EMBEDDING_MODEL: ${EMBEDDING_MODEL:-all-MiniLM-L6-v2}
+      RAW_CHAT_RETENTION_DAYS: ${RAW_CHAT_RETENTION_DAYS:-90}
+      SESSION_SUMMARY_RETENTION_DAYS: ${SESSION_SUMMARY_RETENTION_DAYS:-365}
+      SCREENING_RETENTION_DAYS: ${SCREENING_RETENTION_DAYS:-365}
+      CONSENT_RETENTION_DAYS: ${CONSENT_RETENTION_DAYS:-365}
+      AUDIT_LOG_RETENTION_DAYS: ${AUDIT_LOG_RETENTION_DAYS:-365}
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    volumes:
+      - type: volume
+        source: calma_store
+        target: /app/data/store
+      - type: bind
+        source: ./data/raw
+        target: /app/data/raw
+        read_only: true
+      - type: bind
+        source: ./data/processed
+        target: /app/data/processed
+        read_only: true
+    healthcheck:
+      test: ["CMD-SHELL", "curl -fsS http://localhost:8000/health || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 180s
+    restart: unless-stopped
+
+  frontend:
+    build:
+      context: ./client
+      dockerfile: Dockerfile
+      args:
+        VITE_API_URL: ${VITE_API_URL:-/api}
+    container_name: calma-client
+    depends_on:
+      backend:
+        condition: service_healthy
+        restart: true
+    environment:
+      FRONTEND_API_UPSTREAM: ${FRONTEND_API_UPSTREAM:-backend:8000}
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    healthcheck:
+      test: ["CMD-SHELL", "wget -q -O /dev/null http://localhost/ || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+    ports:
+      - "8080:80"
+    restart: unless-stopped
+
+  qdrant:
+    image: qdrant/qdrant:v1.16.2
+    container_name: calma-qdrant
+    ports:
+      - "6333:6333"
+    volumes:
+      - calma_qdrant:/qdrant/storage
+    healthcheck:
+      test: ["CMD-SHELL", "wget -q -O /dev/null http://localhost:6333/healthz || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+    restart: unless-stopped
+
+volumes:
+  calma_store:
+  calma_qdrant:

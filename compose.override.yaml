@@ -1,0 +1,29 @@
+# Development override — auto-applied by `docker compose up`.
+# Production/demo path: `docker compose -f compose.yaml up --build`
+
+services:
+  backend:
+    volumes:
+      - type: bind
+        source: ./server
+        target: /app/server
+      - type: bind
+        source: ./data/raw
+        target: /app/data/raw
+      - type: bind
+        source: ./data/processed
+        target: /app/data/processed
+      - type: bind
+        source: ./data/store
+        target: /app/data/store
+      - type: bind
+        source: ./run.py
+        target: /app/run.py
+    environment:
+      LOG_LEVEL: debug
+      RELOAD: "true"
+    command: python -m server.run
+
+  frontend:
+    environment:
+      VITE_DEV_MODE: "true"

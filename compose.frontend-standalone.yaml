@@ -1,0 +1,5 @@
+services:
+  frontend:
+    depends_on: !reset []
+    environment:
+      FRONTEND_API_UPSTREAM: ${FRONTEND_API_UPSTREAM:-host.docker.internal:8000}

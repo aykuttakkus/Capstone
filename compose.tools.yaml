@@ -1,0 +1,21 @@
+services:
+  init-store:
+    image: alpine:3.20
+    profiles: ["tools"]
+    command: >
+      sh -c '
+      mkdir -p /target &&
+      if [ -d /seed ] && [ "$(ls -A /seed 2>/dev/null)" ]; then
+        cp -R /seed/. /target/;
+      else
+        echo "No seed files found in /seed; leaving volume unchanged.";
+      fi
+      '
+    volumes:
+      - type: volume
+        source: calma_store
+        target: /target
+      - type: bind
+        source: ./data/store
+        target: /seed
+        read_only: true

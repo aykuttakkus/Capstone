@@ -1,0 +1,40 @@
+# =============================================================================
+# Calma — Production Dependencies
+# Pinned versions for reproducibility (last verified: 2026-05-09)
+# =============================================================================
+
+# Web framework
+fastapi==0.136.1
+uvicorn==0.46.0
+starlette==1.0.0
+python-multipart==0.0.20
+
+# Data validation
+pydantic==2.13.3
+email-validator==2.2.0
+
+# Environment configuration
+python-dotenv==1.2.2
+
+# AI / ML — Retrieval
+sentence-transformers==5.4.1
+faiss-cpu==1.13.2
+numpy==2.4.3
+qdrant-client==1.16.2
+
+# PDF ingestion
+pypdf==6.10.2
+
+# Data handling
+pandas==3.0.1
+
+# Database
+sqlalchemy==2.0.49
+aiosqlite==0.22.1
+
+# Authentication
+bcrypt==4.3.0
+python-jose[cryptography]==3.5.0
+
+# HTTP client (for health checks and LLM calls)
+httpx==0.28.1

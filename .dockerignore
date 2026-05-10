@@ -1,0 +1,16 @@
+.git
+.github
+.venv
+.pytest_cache
+__pycache__
+*.pyc
+*.pyo
+*.pyd
+*.sqlite3
+client
+docs
+tests
+logs
+data
+client/node_modules
+client/dist
