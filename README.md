@@ -1,165 +1,158 @@
 # Calma
 
-**A psychology-oriented, safety-aware, source-grounded mental health RAG assistant.**
+Calma is a psychology-oriented, safety-aware RAG assistant for psychoeducational mental health support. It is designed to answer from curated sources, refuse unsafe requests, and stay grounded in evidence.
 
-Calma provides guided psychoeducational support through trusted-source retrieval, structured interaction, and strict clinical safety boundaries. It is designed as an academic capstone demonstrating responsible AI design in a high-sensitivity domain.
+## Stack
 
-> ⚠️ **Calma is an educational tool, not a clinical product.** It does not diagnose, prescribe, or replace professional mental health care.
+- Backend: FastAPI, SQLAlchemy async, SQLite
+- Frontend: React 19 + Vite
+- Retrieval: FAISS by default, Qdrant optional
+- LLM: Ollama, default model `mistral:latest`
+- Embeddings: `sentence-transformers` (`all-MiniLM-L6-v2`)
 
----
+## Prerequisites
 
-## Key Technical Contributions
+- Docker and Docker Compose, or
+- Python with `pip`
+- Node.js with `npm`
+- Ollama running locally for non-Docker development
 
-- **Dual-layer safety architecture** — Deterministic keyword engine (fast path) + LLM-based SafetyGuardian (nuanced path) with negation-aware matching
-- **EvidenceGate** — Abstention mechanism that prevents hallucination by refusing to generate when retrieval confidence is below threshold
-- **Hybrid retrieval** — FAISS semantic search (70%) + keyword BM25 (30%) + knowledge graph contextual boost
-- **Corrective RAG (CRAG)** — `RetrievalGrader` agent validates retrieved evidence before passing to generation
-- **PHQ-9 / GAD-7 clinical screening** integration for structured intake
-- **6-tier safety priority chain** — Crisis → Distress → Medication → Diagnosis → Off-domain → Normal
+The repo does not pin a Python version, so use a modern Python 3 release that works with the pinned dependencies.
 
----
+## Quick Start
 
-## Architecture
-
-See [docs/technical/ARCHITECTURE.md](docs/technical/ARCHITECTURE.md) for full system diagrams (flow, data layer, sequence, deployment).
-
----
-
-## Evaluation Results
-
-- Safety routing accuracy: see [docs/academic/TEST_RESULTS.md](docs/academic/TEST_RESULTS.md)
-- Retrieval quality (Precision@5, nDCG@5): see [docs/academic/RETRIEVAL_EVALUATION.md](docs/academic/RETRIEVAL_EVALUATION.md)
-- Automated behavior-driven coverage lives under `tests/unit`, `tests/integration`, and `tests/eval`
-
----
-
-## Limitations
-
-See [docs/technical/LIMITATIONS.md](docs/technical/LIMITATIONS.md) for full disclosure including linguistic bias, cultural limitations, and deployment constraints.
-
----
-
-## Structure
-
-- `client/` frontend application
-- `server/` backend launcher and package root
-- `server/app/` canonical backend application package
-- `server/app/core/` canonical core package
-- `server/app/services/` canonical service package
-- `data/` corpus, indexes, secure DB
-- `scripts/` maintenance scripts
-- `Makefile` standard commands
-- `docs/` categorized project docs
-- `docs/archive/` archived phase notes and status docs
-
-## Run
-
-Backend:
-
-```bash
-python -m server.run
-```
-
-Frontend:
-
-```bash
-cd client
-npm ci
-npm run dev
-```
-
-Both apps now run independently. `python -m server.run` starts only the backend, and the frontend is started from `client/`.
-
-## Docker
-
-Full stack:
+The fastest path is Docker Compose:
 
 ```bash
 docker compose up --build
 ```
 
-Default local `docker compose up --build` uses `compose.yaml` plus `compose.override.yaml`.
-The clean production/demo path is `docker compose -f compose.yaml up --build`.
-The base backend image starts in production-style mode, while hot reload lives only in the local override file.
-The frontend service waits for the backend healthcheck before starting, while deeper application readiness remains available at `/ready`.
-The backend persists its runtime database and FAISS index in the named Docker volume `calma_store`.
-The backend mounts `data/raw` and `data/processed` read-only in the base stack, and prepares writable runtime state under `/app/data/store`.
-The frontend image installs dependencies with `npm ci` and serves the build through nginx using a runtime upstream variable so it can support both full-stack and standalone modes.
+This starts the backend, frontend, and Qdrant. The base compose file also exposes the backend on `8000` and the frontend on `8080`.
 
-Clean base stack:
+Open:
 
-```bash
-docker compose -f compose.yaml up --build
-```
+- Frontend: `http://localhost:8080`
+- Backend health: `http://localhost:8000/health`
+- Backend readiness: `http://localhost:8000/ready`
+- API docs: `http://localhost:8000/docs`
 
-Backend only:
+## Local Development
+
+1. Install dependencies:
 
 ```bash
-docker compose up --build backend
+make install
 ```
 
-Frontend only, with an external backend:
+2. Start Ollama and make sure `mistral:latest` is available.
+
+3. Run the backend:
 
 ```bash
-docker compose -f compose.yaml -f compose.frontend-standalone.yaml up --build frontend
+make run-server
 ```
 
-Stop the stack:
+4. Run the frontend in another terminal:
 
 ```bash
-docker compose down
+make run-client
 ```
 
-Reset the stack and volume:
+Local dev defaults:
+
+- Backend: `http://127.0.0.1:8000`
+- Frontend: `http://localhost:5173`
+
+`server/run.py` will use `.venv/bin/python` if it exists; otherwise it falls back to the current Python interpreter.
+
+## Environment Variables
+
+Copy `.env.example` to `.env` if you want local overrides:
 
 ```bash
-docker compose down -v
+cp .env.example .env
 ```
 
-Default ports:
+Important settings:
 
-- backend: `http://localhost:8000`
-- frontend: `http://localhost:8080`
+- `APP_NAME=Calma`
+- `BACKEND_HOST=127.0.0.1`
+- `BACKEND_PORT=8000`
+- `RETRIEVAL_BACKEND=faiss`
+- `OLLAMA_BASE_URL=http://localhost:11434`
+- `OLLAMA_MODEL=mistral:latest`
+- `QDRANT_URL=http://localhost:6333`
+- `VITE_API_URL=/api`
 
-## Makefile
+The full default list is in `.env.example` and `compose.yaml`.
 
-- `make install` installs backend and frontend dependencies
-- `make test-unit` runs the fast offline unit/service suite
-- `make test-integration` runs API, database, and retrieval integration tests
-- `make test` runs both backend test tiers
-- `make test-eval` runs the separate evaluation contract and benchmark script
-- `make verify` runs the full local validation gate
-- `make run-stack` starts the full stack with Docker Compose
-- `make docker-dev` starts the default local Docker development stack
-- `make docker-prod` starts the clean base Docker stack
-- `make docker-frontend-standalone` starts the frontend against an external backend
-- `make docker-init-store` seeds the named runtime volume from `data/store`
-- `make ingest-pdfs` rebuilds the PDF corpus inputs
-- `make build-index` rebuilds the index artifacts
+## Data Layout
 
-Local verification gate:
+Expected repository data folders:
+
+- `data/raw` - source PDFs and seed knowledge base files
+- `data/processed` - processed corpus artifacts and manifests
+- `data/store` - runtime state such as the SQLite DB and FAISS index
+
+Docker Compose mounts these paths into the backend. Treat `data/store` as runtime state, not source data.
+
+Useful ingestion commands:
+
+```bash
+make ingest-pdfs
+make build-index
+```
+
+## Testing And Verification
+
+Run the main quality gates with:
 
 ```bash
 make verify
 ```
 
-This gate runs backend unit and integration tests, frontend `npm ci` + lint/build, and the full Docker Compose contract validation set.
+Other useful commands:
 
-Readiness:
+```bash
+make test
+make test-unit
+make test-integration
+make test-eval
+make frontend-check
+make compose-check
+```
 
-- health: `http://localhost:8000/health`
-- ready: `http://localhost:8000/ready`
+The evaluation harness writes its report under `tests/eval/`.
+
+## Docker Commands
+
+- `make run-stack` - full stack with Compose
+- `make docker-dev` - same default development stack
+- `make docker-prod` - base compose stack without the dev override
+- `make docker-frontend-standalone` - frontend only, against an external backend
+- `make docker-init-store` - seed the named runtime store volume
+
+`docker compose up` automatically applies `compose.override.yaml`, which enables bind mounts and reload-friendly development settings.
+
+## Troubleshooting
+
+- First startup can take a while while Ollama loads the model and the embedding model warms up.
+- If chat is slow on the first request, wait for backend startup to finish and re-try.
+- Make sure ports `8000`, `8080`, `5173`, `6333`, and `11434` are free when using local services.
+- If you change retrieval mode to Qdrant, confirm the Qdrant container or service is running.
+- If the frontend cannot reach the backend, check `VITE_API_URL` and `FRONTEND_API_UPSTREAM`.
+
+## Documentation
+
+Useful docs in this repo:
+
+- `docs/technical/PROJECT_OVERVIEW.md`
+- `docs/technical/ARCHITECTURE.md`
+- `docs/technical/TECH_STACK.md`
+- `docs/technical/GOVERNANCE_CONTRACT.md`
+- `docs/academic/TEST_RESULTS.md`
 
 ## Notes
 
-- Copy `.env.example` to `.env` when you want local overrides.
-- Docker Compose can start with its built-in defaults even when `.env` is absent.
-- `FRONTEND_API_UPSTREAM` controls the nginx API upstream at runtime and is what enables the standalone frontend mode.
-- `data/store/` and `data/processed/` contain generated artifacts.
-- `data/raw/` should contain only real source PDFs.
-- The local development override binds `data/raw`, `data/processed`, and `data/store` from the host for inspection and iteration.
-- If you want to pre-seed the named store volume before a clean base run, use `make docker-init-store`.
-
-## Demo
-
-- See `docs/management/demo_package.md` for the advisor demo flow, architecture, and seed PDF guidance.
+- The assistant is intended for psychoeducational support, not diagnosis or medical advice.
+- The default retrieval backend is FAISS. Qdrant is available if you want to switch later.
