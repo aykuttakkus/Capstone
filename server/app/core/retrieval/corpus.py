@@ -22,27 +22,37 @@ class KnowledgeChunk:
     section: str = ""
     pdf_file: str = ""
     page: int = 0
+    page_start: int = 0
+    page_end: int = 0
     source_kind: str = "user_corpus"
     parser_mode: str = "legacy"
     confidence: float = 1.0
     language: str = "en"
+    word_count: int = 0
 
     @classmethod
     def from_dict(cls, payload: dict[str, Any]) -> "KnowledgeChunk":
+        page = int(payload.get("page", payload.get("page_start", 0)) or 0)
+        page_start = int(payload.get("page_start", page) or page)
+        page_end = int(payload.get("page_end", page_start or page) or (page_start or page))
+        content = str(payload.get("content", ""))
         return cls(
             id=str(payload.get("id", payload.get("title", "chunk"))),
             title=str(payload.get("title", "Untitled")),
             topic=str(payload.get("topic", "general")),
             source=str(payload.get("source", "Unknown source")),
-            content=str(payload.get("content", "")),
+            content=content,
             keywords=[str(item) for item in payload.get("keywords", [])],
             section=str(payload.get("section", "")),
             pdf_file=str(payload.get("pdf_file", "")),
-            page=int(payload.get("page", 0) or 0),
+            page=page,
+            page_start=page_start,
+            page_end=page_end,
             source_kind=str(payload.get("source_kind", "user_corpus")),
             parser_mode=str(payload.get("parser_mode", "legacy")),
             confidence=float(payload.get("confidence", 1.0) or 1.0),
             language=str(payload.get("language", infer_language(f"{payload.get('title', '')} {payload.get('content', '')}"))),
+            word_count=int(payload.get("word_count", len(content.split())) or len(content.split())),
         )
 
 
@@ -88,10 +98,13 @@ class KnowledgeBase:
                 "section": chunk.section,
                 "pdf_file": chunk.pdf_file,
                 "page": chunk.page,
+                "page_start": chunk.page_start,
+                "page_end": chunk.page_end,
                 "source_kind": chunk.source_kind,
                 "parser_mode": chunk.parser_mode,
                 "confidence": chunk.confidence,
                 "language": chunk.language,
+                "word_count": chunk.word_count,
             }
             for chunk in self.chunks
         ]

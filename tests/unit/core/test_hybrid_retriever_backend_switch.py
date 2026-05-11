@@ -121,3 +121,21 @@ def test_hybrid_retriever_uses_graph_only_for_graph_friendly_queries(monkeypatch
     fake_graph.calls = 0
     retriever.retrieve("Tell me about stress", topic="stress_anxiety", k=2)
     assert fake_graph.calls == 0
+
+
+def test_hybrid_retriever_treats_general_and_unknown_topics_as_unfiltered(tmp_path) -> None:
+    kb = build_small_knowledge_base()
+    embedder = EmbeddingBackend(dimension=32)
+    faiss_store = FaissIndexStore(tmp_path / "faiss.index", tmp_path / "faiss_metadata.json")
+    faiss_store.build(kb, embedder)
+
+    retriever = hybrid_module.HybridRetriever(kb, faiss_store, embedder=embedder)
+
+    baseline = retriever.retrieve("stress and sleep", topic=None, k=2)
+    general_results = retriever.retrieve("stress and sleep", topic="general", k=2)
+    unknown_results = retriever.retrieve("stress and sleep", topic="not_a_real_topic", k=2)
+
+    assert general_results
+    assert unknown_results
+    assert [result.chunk.id for result in general_results] == [result.chunk.id for result in baseline]
+    assert [result.chunk.id for result in unknown_results] == [result.chunk.id for result in baseline]

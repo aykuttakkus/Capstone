@@ -42,3 +42,17 @@ def test_simple_retriever_applies_metadata_filters() -> None:
     assert all(result.chunk.source_kind == "safety_reference" for result in results)
     assert all(result.chunk.language == "en" for result in results)
     assert all(result.chunk.confidence >= 0.9 for result in results)
+
+
+def test_simple_retriever_treats_general_and_unknown_topics_as_unfiltered() -> None:
+    kb = build_small_knowledge_base()
+    retriever = SimpleRetriever(kb)
+
+    baseline = retriever.retrieve("stress sleep", topic=None, k=2)
+    general_results = retriever.retrieve("stress sleep", topic="general", k=2)
+    unknown_results = retriever.retrieve("stress sleep", topic="not_a_real_topic", k=2)
+
+    assert general_results
+    assert unknown_results
+    assert [result.chunk.id for result in general_results] == [result.chunk.id for result in baseline]
+    assert [result.chunk.id for result in unknown_results] == [result.chunk.id for result in baseline]

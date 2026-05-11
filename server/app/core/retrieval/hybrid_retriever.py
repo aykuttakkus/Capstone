@@ -8,7 +8,7 @@ from server.app.core.retrieval.embeddings import EmbeddingBackend
 from server.app.core.retrieval.faiss_store import FaissIndexStore
 from server.app.core.retrieval.graph_store import GraphStore, is_graph_friendly_query, should_enable_graph_rag
 from server.app.core.retrieval.qdrant_store import QdrantStore
-from server.app.core.retrieval.retriever import ScoredChunk, SimpleRetriever, topic_alignment_score
+from server.app.core.retrieval.retriever import ScoredChunk, SimpleRetriever, normalize_topic_filter, topic_alignment_score
 from server.app.utils.text import infer_language
 
 
@@ -41,13 +41,14 @@ class HybridRetriever:
     ) -> list[ScoredChunk]:
         query_embedding = self.embedder.embed(query)
         query_language = language or infer_language(query)
+        normalized_topic = normalize_topic_filter(topic, available_topics={chunk.topic for chunk in self.knowledge_base.chunks})
 
         # Broaden search to find more candidates before filtering
         semantic_results = []
         if RETRIEVAL_BACKEND == "qdrant" and self.qdrant_store.available:
             semantic_results = self.qdrant_store.search_with_filters(
                 query_embedding,
-                topic=topic,
+                topic=normalized_topic,
                 k=k * 3,
                 source_kind=source_kind,
                 language=language,
@@ -56,7 +57,7 @@ class HybridRetriever:
         if not semantic_results:
             semantic_results = self.faiss_store.search(
                 query_embedding,
-                topic=topic,
+                topic=normalized_topic,
                 k=k * 3,
                 source_kind=source_kind,
                 language=language,
@@ -64,7 +65,7 @@ class HybridRetriever:
             )
         keyword_results = self.keyword_retriever.retrieve(
             query,
-            topic=topic,
+            topic=normalized_topic,
             k=k * 3,
             source_kind=source_kind,
             language=language,
@@ -78,11 +79,11 @@ class HybridRetriever:
         keyword_map: dict[str, float] = {r.chunk.id: r.score / max_kw_score for r in keyword_results}
 
         graph_map: dict[str, float] = {}
-        if self.graph_store is not None and is_graph_friendly_query(query, topic, min_terms=GRAPH_RAG_MIN_QUERY_TERMS):
+        if self.graph_store is not None and is_graph_friendly_query(query, normalized_topic, min_terms=GRAPH_RAG_MIN_QUERY_TERMS):
             import re
 
             query_kws = re.findall(r"\w{4,}", query.lower())
-            graph_ids = self.graph_store.get_related_chunks(seed_topic=topic, seed_keywords=query_kws)
+            graph_ids = self.graph_store.get_related_chunks(seed_topic=normalized_topic, seed_keywords=query_kws)
             graph_map = {cid: 0.12 for cid in graph_ids}
 
         all_ids = sorted(set(semantic_map) | set(keyword_map) | set(graph_map))
@@ -101,13 +102,13 @@ class HybridRetriever:
             sem = semantic_map.get(cid, 0.0)
             kw = keyword_map.get(cid, 0.0)
             graph_boost = graph_map.get(cid, 0.0)
-            alignment_boost = topic_alignment_score(topic, chunk_lookup[cid].topic) * 0.12
+            alignment_boost = topic_alignment_score(normalized_topic, chunk_lookup[cid].topic) * 0.12
             language_boost = 0.08 if chunk_lookup[cid].language == query_language else 0.0
 
             combined = (self.SEMANTIC_WEIGHT * sem) + (self.KEYWORD_WEIGHT * kw) + graph_boost + alignment_boost + language_boost
             scored.append(ScoredChunk(chunk=chunk_lookup[cid], score=combined))
 
-        scored.sort(key=lambda x: (x.score, topic_alignment_score(topic, x.chunk.topic), x.chunk.id), reverse=True)
+        scored.sort(key=lambda x: (x.score, topic_alignment_score(normalized_topic, x.chunk.topic), x.chunk.id), reverse=True)
         
         if scored:
             print(f"[DEBUG] Top retrieval score: {scored[0].score:.4f} for topic {scored[0].chunk.topic}")

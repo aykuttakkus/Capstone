@@ -8,6 +8,7 @@ from pathlib import Path
 
 from server.app.core.config import (
     CORPUS_MANIFEST_PATH,
+    DATA_DIR,
     PDF_INVENTORY_HISTORY_PATH,
     PDF_INVENTORY_PATH,
     PDF_INVENTORY_VERSIONS_DIR,
@@ -53,6 +54,15 @@ def _append_history(path: Path, entry: dict) -> None:
     save_json(path, history)
 
 
+def _resolve_output_path(path: Path, staging_root: Path | None = None) -> Path:
+    if staging_root is None:
+        return path
+    try:
+        return staging_root / path.relative_to(DATA_DIR)
+    except ValueError:
+        return staging_root / path.name
+
+
 def ingest_pdf_directory(
     pdf_dir: Path,
     *,
@@ -60,17 +70,26 @@ def ingest_pdf_directory(
     processed_corpus_path: Path = PROCESSED_CORPUS_PATH,
     include_non_indexable: bool = False,
     version: str | None = None,
+    dry_run: bool = False,
+    staging_root: Path | None = None,
 ) -> PDFIngestionResult:
     pdf_dir = Path(pdf_dir)
     if not pdf_dir.exists():
         raise FileNotFoundError(f"PDF directory not found: {pdf_dir}")
+    staging_root = Path(staging_root) if staging_root is not None else None
+    inventory_path = _resolve_output_path(Path(inventory_path), staging_root)
+    processed_corpus_path = _resolve_output_path(Path(processed_corpus_path), staging_root)
+    inventory_history_path = _resolve_output_path(PDF_INVENTORY_HISTORY_PATH, staging_root)
+    manifest_path = _resolve_output_path(CORPUS_MANIFEST_PATH, staging_root)
+    inventory_versions_dir = _resolve_output_path(PDF_INVENTORY_VERSIONS_DIR, staging_root)
+    processed_versions_dir = _resolve_output_path(PROCESSED_CORPUS_VERSIONS_DIR, staging_root)
 
     inventory = build_inventory(pdf_dir)
     corpus = build_corpus_from_pdf_dir(pdf_dir, include_non_indexable=include_non_indexable)
     corpus_version = version or compute_corpus_version(inventory, corpus)
 
-    inventory_version_path = PDF_INVENTORY_VERSIONS_DIR / f"{corpus_version}.json"
-    processed_version_path = PROCESSED_CORPUS_VERSIONS_DIR / f"{corpus_version}.json"
+    inventory_version_path = inventory_versions_dir / f"{corpus_version}.json"
+    processed_version_path = processed_versions_dir / f"{corpus_version}.json"
 
     timestamp = datetime.now(timezone.utc).isoformat()
     history_entry = {
@@ -87,12 +106,13 @@ def ingest_pdf_directory(
         "total_chunks": len(corpus),
     }
 
-    save_json(inventory_path, inventory)
-    save_json(processed_corpus_path, corpus)
-    save_json(inventory_version_path, inventory)
-    save_json(processed_version_path, corpus)
-    _append_history(PDF_INVENTORY_HISTORY_PATH, history_entry)
-    _append_history(CORPUS_MANIFEST_PATH, history_entry)
+    if not dry_run:
+        save_json(inventory_path, inventory)
+        save_json(processed_corpus_path, corpus)
+        save_json(inventory_version_path, inventory)
+        save_json(processed_version_path, corpus)
+        _append_history(inventory_history_path, history_entry)
+        _append_history(manifest_path, history_entry)
 
     indexed_pdfs = sum(1 for item in inventory if item.get("include_in_index"))
     total_pdfs = len(inventory)
@@ -105,7 +125,7 @@ def ingest_pdf_directory(
         processed_corpus_path=processed_corpus_path,
         inventory_version_path=inventory_version_path,
         processed_version_path=processed_version_path,
-        manifest_path=CORPUS_MANIFEST_PATH,
+        manifest_path=manifest_path,
         total_pdfs=total_pdfs,
         indexed_pdfs=indexed_pdfs,
         skipped_pdfs=skipped_pdfs,

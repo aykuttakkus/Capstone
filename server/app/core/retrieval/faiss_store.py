@@ -8,6 +8,7 @@ from pathlib import Path
 import numpy as np
 
 from server.app.core.retrieval.corpus import KnowledgeBase, KnowledgeChunk
+from server.app.core.retrieval.retriever import normalize_topic_filter
 from server.app.utils.io import load_json, save_json
 
 
@@ -138,6 +139,7 @@ class FaissIndexStore:
         metadata, _ = self._load_metadata_bundle()
         if not metadata:
             return []
+        normalized_topic = normalize_topic_filter(topic, available_topics={str(item.get("topic", "")) for item in metadata})
 
         q = np.array([query_embedding], dtype=np.float32)
 
@@ -151,9 +153,9 @@ class FaissIndexStore:
                     if idx < 0:
                         continue
                     chunk = KnowledgeChunk.from_dict(metadata[idx])
-                    if not self._matches_filters(chunk, topic=topic, source_kind=source_kind, language=language, min_confidence=min_confidence):
+                    if not self._matches_filters(chunk, topic=normalized_topic, source_kind=source_kind, language=language, min_confidence=min_confidence):
                         continue
-                    topic_bonus = self._topic_bonus(chunk.topic, topic)
+                    topic_bonus = self._topic_bonus(chunk.topic, normalized_topic)
                     results.append((chunk, float(score) + topic_bonus))
                 results.sort(key=lambda x: x[1], reverse=True)
                 return results[:k]
@@ -174,9 +176,9 @@ class FaissIndexStore:
             if idx >= len(metadata):
                 continue
             chunk = KnowledgeChunk.from_dict(metadata[int(idx)])
-            if not self._matches_filters(chunk, topic=topic, source_kind=source_kind, language=language, min_confidence=min_confidence):
+            if not self._matches_filters(chunk, topic=normalized_topic, source_kind=source_kind, language=language, min_confidence=min_confidence):
                 continue
-            topic_bonus = self._topic_bonus(chunk.topic, topic)
+            topic_bonus = self._topic_bonus(chunk.topic, normalized_topic)
             results.append((chunk, float(scores_arr[idx]) + topic_bonus))
 
         results.sort(key=lambda x: x[1], reverse=True)
