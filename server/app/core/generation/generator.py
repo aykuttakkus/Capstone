@@ -63,10 +63,11 @@ class AnswerGenerator:
         screening_info = f"\n[Assessment: {screening.get('severity') if screening else 'None'}]"
         sentiment_info = f"\n[User Sentiment: {sentiment.label if sentiment else 'Neutral'}]"
         memory_info = f"\n[Key History: {memory[:200] if memory else ''}]"
-        
+        profile_info = f"\n[Profile: {profile_snapshot}]" if profile_snapshot else ""
+
         return "\n\n".join(
             [
-                system_rules + context_block + screening_info + sentiment_info + memory_info,
+                system_rules + context_block + screening_info + sentiment_info + memory_info + profile_info,
                 f"User Message: {message}",
                 render_prompt("generation.answer_output_format"),
             ]

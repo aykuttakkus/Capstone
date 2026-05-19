@@ -65,7 +65,6 @@ const initialProfileDraft = {
 const initialMoodDraft = { mood_score: 5, energy_score: 5, anxiety_score: 5, sleep_quality: 5, notes: '' };
 const initialJournalDraft = { title: '', content: '', consent_for_chat: false };
 
-const formatOptionLabel = (value) => value.replace(/_/g, ' ');
 const getOnboardingStorageKey = (email = 'guest') => `${ONBOARDING_KEY}:${email.toLowerCase()}`;
 const getLegacyOnboardingStorageKey = (email = 'guest') => `${ONBOARDING_KEY_LEGACY}:${email.toLowerCase()}`;
 const getOnboardingCompleteKey = (email = 'guest') => `${ONBOARDING_COMPLETE_KEY}:${email.toLowerCase()}`;
@@ -455,19 +454,6 @@ function App() {
     textareaRef.current.style.height = 'auto';
     textareaRef.current.style.height = `${textareaRef.current.scrollHeight}px`;
   }, [inputText]);
-
-  useEffect(() => {
-    if (stage !== 'intake') return undefined;
-
-    const handlePointerDown = (event) => {
-      if (!intakeFormRef.current?.contains(event.target)) {
-        setOpenIntakeField(null);
-      }
-    };
-
-    document.addEventListener('pointerdown', handlePointerDown);
-    return () => document.removeEventListener('pointerdown', handlePointerDown);
-  }, [stage]);
 
   useEffect(() => {
     if (!isProfileOpen) return undefined;
@@ -902,8 +888,8 @@ function App() {
           role: 'assistant',
           content:
             'This initial understanding helps me hold a safe and supportive space for you. ' +
-            'To further refine our starting point, I would like to offer two standard clinical assessments (PHQ-9 and GAD-7). ' +
-            'These are not diagnostic tools on their own, but they provide a baseline for us to track your progress and ensure I offer the most appropriate guidance.',
+            'To further refine our starting point, I would like to offer two standard screening questionnaires (PHQ-9 and GAD-7). ' +
+            'These are not diagnostic tools on their own, but they provide a baseline for tracking patterns and keeping guidance appropriately bounded.',
         });
 
         setMessages((prev) => [...prev, ...messagesToAdd]);
@@ -997,7 +983,7 @@ function App() {
         ...prev,
         {
           role: 'assistant',
-          content: 'The clinical assistant is currently unavailable. Please try again.',
+          content: 'The support assistant is currently unavailable. Please try again.',
         },
       ]);
     } finally {
@@ -1343,7 +1329,7 @@ function App() {
                   </div>
                   <div className="message-content">
                     <div className="font-semibold text-xs mb-1 uppercase tracking-wider text-muted">
-                      {intakePhase ? 'PhD Clinical Psychologist' : `${APP_NAME} (AI)`}
+                      {intakePhase ? `${APP_NAME} Support Intake` : `${APP_NAME} (AI)`}
                     </div>
                     {msg.data?.status === 'crisis' && (
                       <div className="crisis-alert">
@@ -1361,7 +1347,7 @@ function App() {
                       <div className="clinical-nugget-card animate-slide-up">
                         <div className="flex items-center gap-2 text-xs font-bold text-accent mb-2 tracking-widest uppercase">
                           <Lightbulb size={14} />
-                          Professional Insight
+                          Psychoeducation Insight
                         </div>
                         <div className="text-sm text-slate-300 leading-relaxed italic">
                           "{msg.data.clinical_nugget}"
@@ -1382,7 +1368,7 @@ function App() {
                       <div className="mt-4 pt-4 border-t border-white/5">
                         <div className="flex items-center gap-2 text-xs font-semibold text-muted mb-2">
                           <FileText size={14} />
-                          CLINICAL SOURCES
+                          SUPPORT SOURCES
                         </div>
                         <div className="flex flex-wrap gap-2">
                           {msg.data.sources.map((src, sidx) => (
@@ -1414,7 +1400,7 @@ function App() {
                   <Sparkles size={18} className="animate-spin" />
                 </div>
                 <div className="message-content text-muted italic flex items-center gap-2">
-                  {intakePhase ? 'PhD Assistant is reflecting...' : 'Searching clinical index...'}
+                  {intakePhase ? 'Calma is reflecting...' : 'Searching support index...'}
                 </div>
               </div>
             )}

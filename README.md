@@ -2,6 +2,8 @@
 
 Calma is a psychology-oriented, safety-aware RAG assistant for psychoeducational mental health support. It is designed to answer from curated sources, refuse unsafe requests, and stay grounded in evidence.
 
+Calma is not a therapist, psychologist, psychiatrist, doctor, diagnostic tool, treatment provider, medication advisor, emergency service, or replacement for professional care. In urgent or crisis situations, users should contact local emergency services or a qualified professional.
+
 ## Stack
 
 - Backend: FastAPI, SQLAlchemy async, SQLite
@@ -155,4 +157,5 @@ Useful docs in this repo:
 ## Notes
 
 - The assistant is intended for psychoeducational support, not diagnosis or medical advice.
+- It must not present itself as a clinician or therapy provider.
 - The default retrieval backend is FAISS. Qdrant is available if you want to switch later.

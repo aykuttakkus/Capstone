@@ -34,6 +34,11 @@ def _reason_tags(query: str, chunk: ScoredChunk, query_topic: str | None = None)
     else:
         tags.append("low_score")
 
+    if chunk.chunk.clinical_scope:
+        tags.append(f"scope:{chunk.chunk.clinical_scope}")
+    if chunk.chunk.content_type:
+        tags.append(f"content:{chunk.chunk.content_type}")
+
     if not tags:
         tags.append("fallback")
 

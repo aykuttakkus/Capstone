@@ -39,6 +39,19 @@ class RiskState:
 
     def update_risk_check(self, new_level: str, reasoning: str) -> None:
         """Update risk check timestamp and level."""
-        self.current_risk_level = new_level
+        current_rank = self._risk_rank(self.current_risk_level)
+        new_rank = self._risk_rank(new_level)
+        if current_rank < self._risk_rank("high") or new_rank >= current_rank:
+            self.current_risk_level = new_level
         self.last_risk_check = datetime.now()
         self.safety_analysis_reasoning = reasoning
+
+    @staticmethod
+    def _risk_rank(level: str) -> int:
+        return {
+            "none": 0,
+            "low": 1,
+            "medium": 2,
+            "high": 3,
+            "crisis": 4,
+        }.get(level, 0)

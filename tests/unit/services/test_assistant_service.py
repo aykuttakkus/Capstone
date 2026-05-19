@@ -5,11 +5,13 @@ from dataclasses import dataclass
 import pytest
 from sqlalchemy import select
 
-from server.app.core.generation.generator import AnswerGenerator, SentimentProfile
+from server.app.core.generation.generator import AnswerGenerator, GeneratedPayload, SentimentProfile
+from server.app.core.pipeline.orchestrator_v2 import PipelineResult
+from server.app.core.pipeline.response_modes import ResponseMode
 from server.app.core.retrieval.evidence_gate import EvidenceGate
 import server.app.services.assistant as assistant_module
 from server.app.core.retrieval.reranker import EvidenceReranker
-from server.app.models.sql.models import Conversation, JournalEntry, Memory, MemorySegment, MoodEntry, UserProfile
+from server.app.models.sql.models import Conversation, JournalEntry, Memory, MemorySegment, MoodEntry, SessionRiskState, UserProfile
 from server.app.services.assistant import AssistantService
 from server.app.services.session_store import ensure_session
 from tests.factories.retrieval import build_scored_chunk
@@ -43,8 +45,10 @@ class FakeOrchestrator:
 class FakeRetriever:
     def __init__(self, retrievals):
         self._retrievals = retrievals
+        self.calls = []
 
-    def retrieve(self, message: str, topic: str | None = None, k: int = 5):
+    def retrieve(self, message: str, topic: str | None = None, k: int = 5, **kwargs):
+        self.calls.append({"message": message, "topic": topic, "k": k, **kwargs})
         return list(self._retrievals)
 
 
@@ -62,8 +66,25 @@ class FakeSentimentAgent:
 
 
 class FakeMemoryAgent:
-    def summarize_interaction(self, user_msg: str, ai_msg: str, current_memory: str = "") -> str:
+    def summarize_interaction(
+        self,
+        user_msg: str,
+        ai_msg: str,
+        current_memory: str = "",
+        mood_score: int | None = None,
+    ) -> str:
         return f"{current_memory}\nUpdated memory".strip()
+
+
+class FailingMemoryAgent:
+    def summarize_interaction(
+        self,
+        user_msg: str,
+        ai_msg: str,
+        current_memory: str = "",
+        mood_score: int | None = None,
+    ) -> str:
+        raise RuntimeError("memory unavailable")
 
 
 class FakeSupervisor:
@@ -93,6 +114,27 @@ class FakeAuditLogger:
 class FakeReranker:
     def rerank(self, query: str, retrievals, topic: str | None = None):
         return list(reversed(retrievals[:2]))
+
+
+class FakePipelineOrchestrator:
+    def __init__(self, risk_level: str | None = None) -> None:
+        self.calls = []
+        self.risk_level = risk_level
+
+    async def execute(self, context):
+        self.calls.append(context)
+        if self.risk_level:
+            context.risk_state.update_risk_check(self.risk_level, "fake pipeline risk update")
+        return PipelineResult(
+            response="pipeline ok",
+            mode=ResponseMode.PSYCHOEDUCATION,
+            is_degraded=False,
+            distress_signals=0,
+            dependency_violations=0,
+            quality_score=1.0,
+            execution_time_ms=1.0,
+            warnings=[],
+        )
 
 
 def build_service(*, plan: FakePlan, retrievals, grader_flags, llm_backend):
@@ -236,6 +278,237 @@ async def test_assistant_service_returns_evidence_gate_when_retrieval_is_weak(
         assert memory_rows == []
 
 
+async def test_assistant_service_executes_pipeline_for_normal_chat(
+    db_session_factory,
+    authenticated_user,
+    mock_llm_backend,
+) -> None:
+    service = build_service(
+        plan=FakePlan(
+            route="topic:stress_anxiety",
+            topic="stress_anxiety",
+            intent="psychoeducation",
+            safety_mode="normal",
+            risk_level=0,
+        ),
+        retrievals=[build_scored_chunk("stress-001", topic="stress_anxiety", score=0.95)],
+        grader_flags=[True],
+        llm_backend=mock_llm_backend,
+    )
+    fake_pipeline = FakePipelineOrchestrator()
+    service.pipeline_orchestrator = fake_pipeline
+
+    async with db_session_factory() as db:
+        response = await service.handle_message(
+            message="Tell me about stress",
+            user=authenticated_user,
+            db=db,
+            intake={},
+            screening={},
+            history=[{"role": "user", "content": "I was anxious yesterday"}],
+        )
+
+        assert response.status == "grounded"
+        assert len(fake_pipeline.calls) == 1
+        context = fake_pipeline.calls[0]
+        assert context.user_message == "Tell me about stress"
+        assert context.intent == "psychoeducation"
+        assert context.topic == "stress_anxiety"
+        assert context.conversation_history == ["user: I was anxious yesterday"]
+        assert context.profile_context["context_package"]["new_context_signals"] == []
+        assert context.profile_context["context_package"]["response_policy"]["max_questions"] == 1
+        assert service.retriever.calls[0]["intent"] == "psychoeducation"
+        assert service.retriever.calls[0]["allowed_use"] == ["psychoeducation"]
+        assert service.retriever.calls[0]["min_evidence_level"] == "educational"
+        assert service.retriever.calls[0]["clinical_scope"] == "psychoeducation_only"
+
+
+async def test_assistant_service_persists_pipeline_risk_state(
+    db_session_factory,
+    authenticated_user,
+    mock_llm_backend,
+) -> None:
+    service = build_service(
+        plan=FakePlan(
+            route="topic:stress_anxiety",
+            topic="stress_anxiety",
+            intent="psychoeducation",
+            safety_mode="normal",
+            risk_level=0,
+        ),
+        retrievals=[build_scored_chunk("stress-001", topic="stress_anxiety", score=0.95)],
+        grader_flags=[True],
+        llm_backend=mock_llm_backend,
+    )
+    service.pipeline_orchestrator = FakePipelineOrchestrator(risk_level="medium")
+
+    async with db_session_factory() as db:
+        response = await service.handle_message(
+            message="Tell me about stress",
+            user=authenticated_user,
+            db=db,
+            intake={},
+            screening={},
+            history=[],
+        )
+
+        rows = list((await db.execute(select(SessionRiskState))).scalars())
+        assert response.status == "grounded"
+        assert len(rows) == 1
+        assert rows[0].current_risk_level == "medium"
+        assert rows[0].safety_analysis_reasoning == "fake pipeline risk update"
+
+
+async def test_assistant_service_passes_full_response_plan_to_generator(
+    db_session_factory,
+    authenticated_user,
+    mock_llm_backend,
+) -> None:
+    service = build_service(
+        plan=FakePlan(
+            route="topic:stress_anxiety",
+            topic="stress_anxiety",
+            intent="coping_strategy",
+            safety_mode="normal",
+            risk_level=0,
+        ),
+        retrievals=[
+            build_scored_chunk(
+                "coping-001",
+                topic="stress_anxiety",
+                score=0.95,
+                allowed_use=["coping_strategy"],
+                evidence_level="clinical_self_help",
+            )
+        ],
+        grader_flags=[True],
+        llm_backend=mock_llm_backend,
+    )
+    captured = {}
+
+    def fake_build_grounded(**kwargs):
+        captured["planner"] = kwargs["planner"]
+        return GeneratedPayload(
+            status="grounded",
+            answer="Grounded coping answer.",
+            summary="coping_strategy",
+            follow_up=[],
+            route="topic:stress_anxiety",
+        )
+
+    service.generator.build_grounded = fake_build_grounded
+
+    async with db_session_factory() as db:
+        response = await service.handle_message(
+            message="What can I do to manage stress?",
+            user=authenticated_user,
+            db=db,
+            intake={},
+            screening={},
+            history=[],
+        )
+
+        planner = captured["planner"]
+        assert response.status == "grounded"
+        assert planner.primary_intent == "coping_strategy"
+        assert planner.response_mode == "coping"
+        assert planner.needs_rag is True
+        assert planner.source_required is True
+        assert planner.max_questions == 1
+        assert planner.diagnosis_allowed is False
+        assert planner.medication_advice_allowed is False
+
+
+async def test_assistant_service_rewrites_unsafe_generated_diagnosis(
+    db_session_factory,
+    authenticated_user,
+    mock_llm_backend,
+) -> None:
+    service = build_service(
+        plan=FakePlan(
+            route="topic:low_mood",
+            topic="low_mood",
+            intent="psychoeducation",
+            safety_mode="normal",
+            risk_level=0,
+        ),
+        retrievals=[build_scored_chunk("mood-001", topic="low_mood", score=0.95)],
+        grader_flags=[True],
+        llm_backend=mock_llm_backend,
+    )
+
+    def fake_build_grounded(**kwargs):
+        return GeneratedPayload(
+            status="grounded",
+            answer="You have depression.",
+            summary="psychoeducation",
+            follow_up=[],
+            route="topic:low_mood",
+        )
+
+    service.generator.build_grounded = fake_build_grounded
+
+    async with db_session_factory() as db:
+        response = await service.handle_message(
+            message="Why do I feel low?",
+            user=authenticated_user,
+            db=db,
+            intake={},
+            screening={},
+            history=[],
+        )
+
+        assert response.status == "grounded"
+        assert "you have depression" not in response.answer.lower()
+        assert "not as a diagnosis" in response.answer.lower()
+
+
+async def test_assistant_service_rewrites_dependency_language(
+    db_session_factory,
+    authenticated_user,
+    mock_llm_backend,
+) -> None:
+    service = build_service(
+        plan=FakePlan(
+            route="topic:stress_anxiety",
+            topic="stress_anxiety",
+            intent="emotional_support",
+            safety_mode="normal",
+            risk_level=0,
+            use_rag=False,
+        ),
+        retrievals=[],
+        grader_flags=[],
+        llm_backend=mock_llm_backend,
+    )
+
+    def fake_build_grounded(**kwargs):
+        return GeneratedPayload(
+            status="grounded",
+            answer="I will always be here for you and only I understand you.",
+            summary="emotional_support",
+            follow_up=[],
+            route="topic:stress_anxiety",
+        )
+
+    service.generator.build_grounded = fake_build_grounded
+
+    async with db_session_factory() as db:
+        response = await service.handle_message(
+            message="I feel alone",
+            user=authenticated_user,
+            db=db,
+            intake={},
+            screening={},
+            history=[],
+        )
+
+        lowered = response.answer.lower()
+        assert "i will always be here" not in lowered
+        assert "only i understand" not in lowered
+        assert "general psychological information" in lowered
+
+
 async def test_assistant_service_persists_grounded_response_and_memory(
     db_session_factory,
     authenticated_user,
@@ -286,6 +559,43 @@ async def test_assistant_service_persists_grounded_response_and_memory(
         assert response.personalization_applied is True
         assert "profile" in response.personalization_signals
         assert service.audit_logger.events
+
+
+async def test_assistant_service_memory_failure_does_not_block_chat_persistence(
+    db_session_factory,
+    authenticated_user,
+    mock_llm_backend,
+) -> None:
+    service = build_service(
+        plan=FakePlan(
+            route="topic:stress_anxiety",
+            topic="stress_anxiety",
+            intent="psychoeducation",
+            safety_mode="normal",
+            risk_level=0,
+        ),
+        retrievals=[build_scored_chunk("stress-001", topic="stress_anxiety", score=0.95)],
+        grader_flags=[True],
+        llm_backend=mock_llm_backend,
+    )
+    service.memory_agent = FailingMemoryAgent()
+
+    async with db_session_factory() as db:
+        response = await service.handle_message(
+            message="Tell me about stress",
+            user=authenticated_user,
+            db=db,
+            intake={},
+            screening={},
+            history=[],
+        )
+
+        conversations = list((await db.execute(select(Conversation))).scalars())
+        memories = list((await db.execute(select(Memory))).scalars())
+
+        assert response.status == "grounded"
+        assert len(conversations) == 1
+        assert memories == []
 
 
 async def test_assistant_service_reranks_retrievals_before_nuggetization(

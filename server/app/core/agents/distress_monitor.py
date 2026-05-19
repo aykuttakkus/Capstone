@@ -145,5 +145,18 @@ class SubtleDistressMonitor:
 
         return "continue_with_gentle_monitoring"
 
+    def rehydrate_from_risk_state(self, cumulative_risk_signals: list[str]) -> None:
+        """Restore signal history from persisted risk state (spec M6).
+
+        Converts category-name strings (as stored in RiskState.cumulative_risk_signals)
+        back into lightweight DistressSignal stubs so cumulative escalation detection
+        works correctly even when the monitor is re-instantiated between requests.
+        """
+        self.signal_history.clear()
+        for category in cumulative_risk_signals:
+            self.signal_history.append(
+                DistressSignal(category=category, confidence=0.5, turn_number=0, raw_text="[rehydrated]")
+            )
+
     def reset_history(self) -> None:
         self.signal_history.clear()

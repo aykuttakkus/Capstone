@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import json
+
 import pytest
 
 from server.app.services.session import (
@@ -36,5 +38,9 @@ def test_build_session_summary_includes_core_context() -> None:
         intent="psychoeducation",
         safety_mode="normal",
     )
-    assert "stress_anxiety" in summary.recap
-    assert "Stress" in summary.recap
+    parsed = json.loads(summary.recap)
+
+    assert parsed["main_concern"] == "Stress"
+    assert parsed["user_goal"] == "Sources"
+    assert parsed["last_response_mode"] == "psychoeducation"
+    assert parsed["important_new_information"] == ["Topic: stress_anxiety", "Safety mode: normal"]

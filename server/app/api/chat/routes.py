@@ -47,7 +47,7 @@ async def chat(
         print(f"CRITICAL ERROR in Chat Flow: {str(e)}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="An internal error occurred while processing your therapeutic request."
+            detail="An internal error occurred while processing your support request."
         )
 
 

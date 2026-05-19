@@ -69,6 +69,14 @@ class TestRiskState:
         assert risk_state.last_risk_check is not None
         assert risk_state.safety_analysis_reasoning == "Escalation signals detected"
 
+    def test_high_risk_state_is_not_casually_downgraded(self):
+        """A normal later check must not erase unresolved high risk."""
+        risk_state = RiskState(current_risk_level="high")
+        risk_state.update_risk_check("none", "No signal in latest message")
+
+        assert risk_state.current_risk_level == "high"
+        assert risk_state.last_risk_check is not None
+
 
 class TestPipeline14Steps:
     """Test that all 14 pipeline steps are active."""

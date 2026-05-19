@@ -5,9 +5,9 @@ from dataclasses import dataclass, field
 
 @dataclass(slots=True)
 class QualityCriticResult:
-    dimensions: dict[str, float] = field(default_factory=dict)
+    scores: dict[str, float] = field(default_factory=dict)
     overall_score: float = 0.0
-    is_acceptable: bool = True
+    passed: bool = True
     concerns: list[str] = field(default_factory=list)
     recommendations: list[str] = field(default_factory=list)
 
@@ -40,11 +40,11 @@ class QualityCritic:
         },
         "question_discipline": {
             "description": "Are questions used appropriately to promote self-reflection?",
-            "weight": 0.08
+            "weight": 0.05
         },
         "non_repetition": {
             "description": "Is response unique in conversation history?",
-            "weight": 0.08
+            "weight": 0.06
         },
         "clarity": {
             "description": "Is language clear and jargon-free?",
@@ -52,6 +52,10 @@ class QualityCritic:
         },
         "escalation_correctness": {
             "description": "Is escalation logic correct for risk level?",
+            "weight": 0.05
+        },
+        "cultural_safety": {
+            "description": "Does response avoid cultural assumptions and respect diverse backgrounds?",
             "weight": 0.07
         }
     }
@@ -68,32 +72,33 @@ class QualityCritic:
 
         if not response:
             result.overall_score = 0.0
-            result.is_acceptable = False
+            result.passed =False
             result.concerns.append("Response is empty")
             return result
 
         # Score each dimension
-        result.dimensions["intent_match"] = self._score_intent_match(response, intent)
-        result.dimensions["emotional_attunement"] = self._score_emotional_attunement(response, user_message)
-        result.dimensions["evidence_grounding"] = self._score_evidence_grounding(response)
-        result.dimensions["actionability"] = self._score_actionability(response)
-        result.dimensions["safety"] = self._score_safety(response, risk_level)
-        result.dimensions["boundary"] = self._score_boundary(response)
-        result.dimensions["question_discipline"] = self._score_question_discipline(response)
-        result.dimensions["non_repetition"] = self._score_non_repetition(response, conversation_history)
-        result.dimensions["clarity"] = self._score_clarity(response)
-        result.dimensions["escalation_correctness"] = self._score_escalation_correctness(response, risk_level)
+        result.scores["intent_match"] = self._score_intent_match(response, intent)
+        result.scores["emotional_attunement"] = self._score_emotional_attunement(response, user_message)
+        result.scores["evidence_grounding"] = self._score_evidence_grounding(response)
+        result.scores["actionability"] = self._score_actionability(response)
+        result.scores["safety"] = self._score_safety(response, risk_level)
+        result.scores["boundary"] = self._score_boundary(response)
+        result.scores["question_discipline"] = self._score_question_discipline(response)
+        result.scores["non_repetition"] = self._score_non_repetition(response, conversation_history)
+        result.scores["clarity"] = self._score_clarity(response)
+        result.scores["escalation_correctness"] = self._score_escalation_correctness(response, risk_level)
+        result.scores["cultural_safety"] = self._score_cultural_safety(response)
 
         # Calculate weighted overall score
         total_weighted = 0.0
         total_weight = 0.0
-        for dimension, score in result.dimensions.items():
-            weight = self.RUBRIC[dimension]["weight"]
+        for dim, score in result.scores.items():
+            weight = self.RUBRIC[dim]["weight"]
             total_weighted += score * weight
             total_weight += weight
 
         result.overall_score = total_weighted / total_weight if total_weight > 0 else 0.0
-        result.is_acceptable = result.overall_score >= 0.65
+        result.passed =result.overall_score >= 0.65
 
         # Generate concerns and recommendations
         self._generate_feedback(result)
@@ -227,8 +232,22 @@ class QualityCritic:
         else:
             return 0.7
 
+    def _score_cultural_safety(self, response: str) -> float:
+        response_lower = response.lower()
+        assumption_markers = [
+            "everyone feels", "people always", "all people", "you must",
+            "you should always", "normal people", "typical person",
+        ]
+        violations = sum(1 for m in assumption_markers if m in response_lower)
+        inclusive_markers = ["depending on your background", "may vary", "different cultures", "many people"]
+        has_inclusive = any(m in response_lower for m in inclusive_markers)
+        score = max(0.95 - violations * 0.2, 0.4)
+        if has_inclusive:
+            score = min(score + 0.05, 1.0)
+        return score
+
     def _generate_feedback(self, result: QualityCriticResult) -> None:
-        for dimension, score in result.dimensions.items():
+        for dimension, score in result.scores.items():
             if score < 0.65:
                 result.concerns.append(
                     f"{dimension}: {self.RUBRIC[dimension]['description']} (Score: {score:.2f})"
@@ -254,3 +273,5 @@ class QualityCritic:
                     result.recommendations.append("Simplify language and reduce jargon")
                 elif dimension == "escalation_correctness":
                     result.recommendations.append("Adjust escalation response based on risk level")
+                elif dimension == "cultural_safety":
+                    result.recommendations.append("Avoid universal assumptions; use inclusive language")

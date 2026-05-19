@@ -1,15 +1,19 @@
 from __future__ import annotations
 
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 
 
 @dataclass(slots=True)
 class RAGDecision:
-    """Decision on whether and how to use RAG."""
+    """Decision on whether and how to use RAG — spec §32.5 compliant."""
     use_rag: bool
     retrieve_amount: int  # 1-5, number of chunks to retrieve
     reasoning: str
     confidence: float  # 0.0-1.0
+    # Spec §32.5 output contract fields
+    rag_query: str = ""
+    retrieval_scope: list[str] = field(default_factory=list)
+    retrieval_filters: dict = field(default_factory=dict)
 
 
 class RAGDecisionModule:
@@ -57,6 +61,14 @@ class RAGDecisionModule:
             RAGDecision with use_rag flag, amount, reasoning, confidence
         """
 
+        _scope_map = {
+            "psychoeducation": ["psychoeducation"],
+            "coping_strategy": ["coping_strategy", "psychoeducation"],
+            "symptom_exploration": ["symptom_exploration", "psychoeducation"],
+            "emotional_support": ["psychoeducation"],
+        }
+        _risk_filter = "crisis" if risk_level >= 4 else ("high" if risk_level >= 3 else "none")
+
         # Crisis/high-risk: use crisis responses, minimal retrieval
         if risk_level >= 4:
             return RAGDecision(
@@ -64,6 +76,8 @@ class RAGDecisionModule:
                 retrieve_amount=0,
                 reasoning="Crisis mode: prioritize crisis protocols over RAG",
                 confidence=1.0,
+                retrieval_scope=["crisis_safety"],
+                retrieval_filters={"risk_level": "crisis"},
             )
 
         # Off-scope intents: no retrieval (will be handled by off-scope builder)
@@ -73,10 +87,13 @@ class RAGDecisionModule:
                 retrieve_amount=0,
                 reasoning="Off-scope request: no RAG needed",
                 confidence=1.0,
+                retrieval_scope=[],
+                retrieval_filters={},
             )
 
         # Self-contained intents: minimal or no retrieval
         if intent in self.SELF_CONTAINED_INTENTS:
+            scope = _scope_map.get(intent, ["psychoeducation"])
             # Exception: first turn might need context-setting retrieval
             if conversation_length <= 1:
                 return RAGDecision(
@@ -84,6 +101,8 @@ class RAGDecisionModule:
                     retrieve_amount=2,
                     reasoning="First turn emotional support: light retrieval for context",
                     confidence=0.8,
+                    retrieval_scope=scope,
+                    retrieval_filters={"risk_level": _risk_filter},
                 )
             # Long conversations: reduce retrieval to avoid repetition
             if conversation_length > self.conversation_length_threshold:
@@ -92,6 +111,8 @@ class RAGDecisionModule:
                     retrieve_amount=0,
                     reasoning="Long conversation: skip retrieval to avoid repetition",
                     confidence=0.85,
+                    retrieval_scope=scope,
+                    retrieval_filters={"risk_level": _risk_filter},
                 )
             # Normal case: no retrieval for emotional support
             return RAGDecision(
@@ -99,21 +120,21 @@ class RAGDecisionModule:
                 retrieve_amount=0,
                 reasoning="Emotional support: validation over information",
                 confidence=0.9,
+                retrieval_scope=scope,
+                retrieval_filters={"risk_level": _risk_filter},
             )
 
         # Retrieval-dependent intents: always retrieve
         if intent in self.RETRIEVAL_DEPENDENT_INTENTS:
+            scope = _scope_map.get(intent, ["psychoeducation"])
             # Determine retrieval amount
             if conversation_length > self.conversation_length_threshold:
-                # Longer conversations: reduce to avoid repetition
                 amount = 2
                 reasoning = "Retrieval-dependent + long conversation: reduced retrieval"
             elif has_recent_retrieval:
-                # Recently retrieved: use less
                 amount = 2
                 reasoning = "Retrieval-dependent: reduced after recent retrieval"
             else:
-                # Standard retrieval
                 amount = 3
                 reasoning = "Retrieval-dependent intent: standard retrieval"
 
@@ -122,6 +143,8 @@ class RAGDecisionModule:
                 retrieve_amount=amount,
                 reasoning=reasoning,
                 confidence=0.95,
+                retrieval_scope=scope,
+                retrieval_filters={"risk_level": _risk_filter},
             )
 
         # Unknown intent: safe default to minimal retrieval
@@ -130,6 +153,8 @@ class RAGDecisionModule:
             retrieve_amount=1,
             reasoning="Unknown intent: conservative retrieval",
             confidence=0.6,
+            retrieval_scope=["psychoeducation"],
+            retrieval_filters={"risk_level": _risk_filter},
         )
 
     def should_cache_retrieval(self, rag_decision: RAGDecision) -> bool:

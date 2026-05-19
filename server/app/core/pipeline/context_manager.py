@@ -3,9 +3,13 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 from typing import Any
 
+from server.app.core.pipeline.risk_state import RiskState
+
 
 @dataclass(slots=True)
 class ConversationContext:
+    """P3: Superseded by ContextPackage. Retained only for backward compatibility."""
+
     user_id: int
     session_id: str
     current_message: str
@@ -17,6 +21,20 @@ class ConversationContext:
     engagement_level: int = 1
     user_preferences: dict[str, Any] = field(default_factory=dict)
     screening_state: dict[str, Any] = field(default_factory=dict)
+
+
+@dataclass(slots=True)
+class ContextPackage:
+    current_user_message: str
+    recent_conversation: list[dict[str, Any]] = field(default_factory=list)
+    session_summary: dict[str, Any] = field(default_factory=dict)
+    user_state: dict[str, Any] = field(default_factory=dict)
+    risk_state: RiskState = field(default_factory=lambda: RiskState(current_risk_level="none"))
+    response_policy: dict[str, Any] = field(default_factory=dict)
+    resolved_references: list[str] = field(default_factory=list)
+    new_context_signals: list[str] = field(default_factory=list)
+    possible_contradictions: list[str] = field(default_factory=list)
+    previously_suggested_strategies: list[str] = field(default_factory=list)
 
 
 class ContextManager:
@@ -72,6 +90,36 @@ class ContextManager:
         self.conversation_cache[session_id] = context
 
         return context
+
+    def build_context_package(
+        self,
+        *,
+        current_user_message: str,
+        recent_conversation: list[dict[str, Any]] | None = None,
+        session_summary: dict[str, Any] | str | None = None,
+        user_state: dict[str, Any] | None = None,
+        risk_state: RiskState | None = None,
+        response_policy: dict[str, Any] | None = None,
+        max_turns: int = 8,
+    ) -> ContextPackage:
+        """Build the structured context package required by the v2.1 system."""
+        bounded_turns = self._normalize_recent_turns(recent_conversation or [], max_turns=max_turns)
+        summary = self._normalize_session_summary(session_summary)
+        effective_risk_state = risk_state or RiskState(current_risk_level="none")
+        strategies = self._extract_suggested_strategies(bounded_turns, summary)
+
+        return ContextPackage(
+            current_user_message=current_user_message,
+            recent_conversation=bounded_turns,
+            session_summary=summary,
+            user_state=user_state or {},
+            risk_state=effective_risk_state,
+            response_policy=response_policy or self._default_response_policy(effective_risk_state),
+            resolved_references=self._resolve_references(current_user_message, bounded_turns),
+            new_context_signals=self._extract_new_context_signals(current_user_message),
+            possible_contradictions=self._detect_possible_contradictions(current_user_message, summary),
+            previously_suggested_strategies=strategies,
+        )
 
     def get_cached_context(self, session_id: str) -> ConversationContext | None:
         return self.conversation_cache.get(session_id)
@@ -163,6 +211,112 @@ class ContextManager:
         # More turns = higher engagement
         engagement = min(len(recent_turns) // 2, 5)
         return max(engagement, 1)
+
+    def _normalize_recent_turns(
+        self,
+        turns: list[dict[str, Any]],
+        *,
+        max_turns: int,
+    ) -> list[dict[str, Any]]:
+        normalized: list[dict[str, Any]] = []
+        for turn in turns[-max_turns:]:
+            role = str(turn.get("role") or turn.get("speaker") or "user")
+            content = str(turn.get("content") or turn.get("user") or turn.get("assistant") or "")
+            if content:
+                normalized.append(
+                    {
+                        "role": role,
+                        "content": content,
+                        "intent": turn.get("intent"),
+                        "route": turn.get("route"),
+                        "safety_mode": turn.get("safety_mode"),
+                    }
+                )
+        return normalized
+
+    def _normalize_session_summary(self, summary: dict[str, Any] | str | None) -> dict[str, Any]:
+        if isinstance(summary, dict):
+            return dict(summary)
+        if not summary:
+            return {}
+        return {"recap": str(summary)}
+
+    def _default_response_policy(self, risk_state: RiskState) -> dict[str, Any]:
+        return {
+            "max_questions": 1,
+            "diagnosis_allowed": False,
+            "medication_advice_allowed": False,
+            "boundary_required": True,
+            "escalation_required": risk_state.is_high_risk(),
+        }
+
+    def _resolve_references(self, message: str, recent_turns: list[dict[str, Any]]) -> list[str]:
+        lowered = message.lower()
+        reference_markers = ["this", "that", "same thing", "it", "bunu", "şunu", "aynı şey"]
+        if not any(marker in lowered for marker in reference_markers):
+            return []
+
+        for turn in reversed(recent_turns):
+            if turn.get("role") == "user":
+                content = str(turn.get("content", "")).strip()
+                if content:
+                    return [content[:180]]
+        return []
+
+    def _extract_new_context_signals(self, message: str) -> list[str]:
+        lowered = message.lower()
+        signal_map = {
+            "sleep_impact": ["sleep", "slept", "insomnia", "uyku", "uyuyam"],
+            "panic": ["panic", "panik"],
+            "exam_stress": ["exam", "final", "sınav"],
+            "family_stress": ["family", "parent", "aile", "anne", "baba"],
+            "work_stress": ["work", "job", "iş", "çalış"],
+            "social_withdrawal": ["alone", "isolate", "yalnız", "uzaklaş"],
+        }
+        return [name for name, keywords in signal_map.items() if any(keyword in lowered for keyword in keywords)]
+
+    def _detect_possible_contradictions(
+        self,
+        message: str,
+        session_summary: dict[str, Any],
+    ) -> list[str]:
+        lowered = message.lower()
+        recap = str(session_summary.get("recap", "")).lower()
+        contradictions: list[str] = []
+        improvement_markers = ["better", "improved", "passed", "fine now", "daha iyi", "geçti", "şimdi iyi"]
+        distress_markers = ["anxious", "stress", "panic", "hopeless", "stressed", "kaygı", "stres", "panik"]
+        if any(marker in lowered for marker in improvement_markers) and any(marker in recap for marker in distress_markers):
+            contradictions.append("latest_message_may_update_or_resolve_prior_distress")
+        if "not that" in lowered or "that's not" in lowered or "öyle değil" in lowered:
+            contradictions.append("user_corrected_previous_interpretation")
+        return contradictions
+
+    def _extract_suggested_strategies(
+        self,
+        recent_turns: list[dict[str, Any]],
+        session_summary: dict[str, Any],
+    ) -> list[str]:
+        strategies: set[str] = set()
+        known = {
+            "breathing": ["breath", "breathing", "nefes"],
+            "grounding": ["grounding", "5-4-3-2-1", "topraklan"],
+            "journaling": ["journal", "write down", "günlük", "yaz"],
+            "sleep_routine": ["sleep routine", "bedtime", "uyku rutini"],
+            "trusted_person": ["trusted person", "someone you trust", "güvendiğin"],
+        }
+
+        text_blocks = [str(session_summary.get("recap", ""))]
+        text_blocks.extend(str(turn.get("content", "")) for turn in recent_turns if turn.get("role") == "assistant")
+        combined = " ".join(text_blocks).lower()
+        for strategy, keywords in known.items():
+            if any(keyword in combined for keyword in keywords):
+                strategies.add(strategy)
+
+        explicit = session_summary.get("coping_tried")
+        if isinstance(explicit, list):
+            strategies.update(str(item) for item in explicit)
+
+        return sorted(strategies)
 
     def get_summary(self, context: ConversationContext) -> str:
         """Generate a summary of the conversation context."""

@@ -31,34 +31,54 @@ class PersonalizedQueryBuilder:
         memory_segments: list[MemorySegment],
         reflections: list[MemoryReflection],
         sentiment: SentimentProfile | None,
+        # Spec §13: context-aware query enrichment
+        session_summary: dict[str, object] | None = None,
+        primary_intent: str = "",
+        secondary_intents: list[str] | None = None,
+        risk_level: str = "none",
     ) -> PersonalizedQuery:
-        parts = [message.strip()]
+        query_parts = [message.strip()]
         reasons: list[str] = []
+
+        # 1. Session summary enrichment (spec §13)
+        if session_summary:
+            if session_summary.get("main_concern"):
+                query_parts.append(str(session_summary["main_concern"]))
+                reasons.append("session_main_concern")
+            triggers = session_summary.get("triggers")
+            if isinstance(triggers, list) and triggers:
+                query_parts.extend(str(t) for t in triggers[:2])
+                reasons.append("session_triggers")
+
+        # 2. Intent enrichment — only for information-seeking intents
+        if primary_intent and primary_intent not in {"off_scope", "crisis", "repair", "emotional_support"}:
+            query_parts.append(primary_intent.replace("_", " "))
+            reasons.append("primary_intent")
+        if secondary_intents:
+            for intent in secondary_intents[:2]:
+                if intent not in {"off_scope", "crisis"}:
+                    query_parts.append(intent.replace("_", " "))
+            reasons.append("secondary_intents")
+
+        # 3. Profile enrichment
         if profile and profile.primary_concerns:
-            parts.append(f"Primary concern: {profile.primary_concerns}")
+            query_parts.append(str(profile.primary_concerns))
             reasons.append("profile_primary_concern")
-        if profile and profile.goals_for_support:
-            parts.append(f"Support goal: {profile.goals_for_support}")
-            reasons.append("profile_support_goal")
-        if screening and screening.get("severity"):
-            parts.append(f"Screening context: {screening.get('severity')}")
-            reasons.append("screening")
-        if sentiment and sentiment.label:
-            parts.append(f"Emotion: {sentiment.label}")
-            reasons.append("sentiment")
+
+        # 4. Memory segment enrichment (brief excerpts to avoid noise)
         for segment in memory_segments[:2]:
-            parts.append(f"Relevant prior context: {segment.content}")
+            excerpt = str(segment.content)[:80]
+            query_parts.append(excerpt)
             reasons.append(f"memory:{segment.segment_type}")
         for reflection in reflections[:1]:
-            parts.append(f"Previously useful approach: {reflection.content}")
+            query_parts.append(str(reflection.content)[:60])
             reasons.append(f"reflection:{reflection.insight_type}")
-        # Professional Standard: Use ONLY the core message for vector retrieval 
-        # to avoid noise from legacy profile/screening data.
-        retrieval_query = message.strip()
-        
+
+        retrieval_query = " ".join(query_parts)
+
         return PersonalizedQuery(
             retrieval_query=retrieval_query,
-            retrieval_filters={"topic": topic},
+            retrieval_filters={"topic": topic, "risk_level": risk_level},
             reason_context=", ".join(reasons),
         )
 

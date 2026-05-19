@@ -3,6 +3,7 @@ from __future__ import annotations
 import json
 import os
 
+from server.app.core.retrieval.corpus import metadata_matches_filters
 from server.app.core.retrieval.retriever import ScoredChunk, topic_matches
 
 
@@ -12,7 +13,19 @@ class EvidenceGate:
         self.min_chunks = min_chunks if min_chunks is not None else int(os.getenv("EVIDENCE_MIN_CHUNKS", "1"))
         self.taxonomy = self._load_taxonomy()
 
-    def has_enough_evidence(self, results: list[ScoredChunk], topic: str | None = None) -> bool:
+    def has_enough_evidence(
+        self,
+        results: list[ScoredChunk],
+        topic: str | None = None,
+        *,
+        intent: str | None = None,
+        risk_level: str | None = None,
+        allowed_use: list[str] | None = None,
+        exclude_not_allowed: list[str] | None = None,
+        min_evidence_level: str | None = None,
+        freshness_required: bool = False,
+        clinical_scope: str | None = None,
+    ) -> bool:
         if not results:
             return False
         if topic in (None, "", "general"):
@@ -22,11 +35,45 @@ class EvidenceGate:
             if not candidates:
                 return False
 
+        candidates = [
+            r for r in candidates
+            if metadata_matches_filters(
+                r.chunk,
+                intent=intent,
+                risk_level=risk_level,
+                allowed_use=allowed_use,
+                exclude_not_allowed=exclude_not_allowed,
+                min_evidence_level=min_evidence_level,
+                freshness_required=freshness_required,
+                clinical_scope=clinical_scope,
+            )
+        ]
+        if not candidates:
+            return False
+
         above = sum(1 for r in candidates if r.score >= self.min_score)
         return above >= self.min_chunks
 
     def gate_score(self, results: list[ScoredChunk]) -> float:
         return results[0].score if results else 0.0
+
+    def source_quality(self, results: list[ScoredChunk]) -> str:
+        """Classify overall retrieval quality per spec §32.6: high|medium|low|none."""
+        if not results:
+            return "none"
+        top_score = results[0].score
+        evidence_levels = [r.chunk.evidence_level for r in results[:3]]
+        has_clinical = any(
+            lvl in {"clinical_guideline", "peer_reviewed", "clinical_self_help"}
+            for lvl in evidence_levels
+        )
+        if top_score >= 0.75 and has_clinical:
+            return "high"
+        if top_score >= 0.50:
+            return "medium"
+        if top_score >= 0.25:
+            return "low"
+        return "none"
 
     def _load_taxonomy(self) -> dict:
         try:

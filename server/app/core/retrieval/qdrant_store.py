@@ -4,7 +4,7 @@ from dataclasses import dataclass
 from dataclasses import asdict
 from typing import Any
 
-from server.app.core.retrieval.corpus import KnowledgeBase, KnowledgeChunk
+from server.app.core.retrieval.corpus import KnowledgeBase, KnowledgeChunk, metadata_matches_filters
 
 try:
     from qdrant_client import QdrantClient  # type: ignore
@@ -68,6 +68,13 @@ class QdrantStore:
         source_kind: str | None = None,
         language: str | None = None,
         min_confidence: float | None = None,
+        intent: str | None = None,
+        risk_level: str | None = None,
+        allowed_use: list[str] | None = None,
+        exclude_not_allowed: list[str] | None = None,
+        min_evidence_level: str | None = None,
+        freshness_required: bool = False,
+        clinical_scope: str | None = None,
     ) -> bool:
         if topic and chunk.topic != topic and not any(part in chunk.topic for part in topic.split("_") if part):
             return False
@@ -76,6 +83,17 @@ class QdrantStore:
         if language and chunk.language != language:
             return False
         if min_confidence is not None and chunk.confidence < min_confidence:
+            return False
+        if not metadata_matches_filters(
+            chunk,
+            intent=intent,
+            risk_level=risk_level,
+            allowed_use=allowed_use,
+            exclude_not_allowed=exclude_not_allowed,
+            min_evidence_level=min_evidence_level,
+            freshness_required=freshness_required,
+            clinical_scope=clinical_scope,
+        ):
             return False
         return True
 
@@ -88,6 +106,13 @@ class QdrantStore:
         source_kind: str | None = None,
         language: str | None = None,
         min_confidence: float | None = None,
+        intent: str | None = None,
+        risk_level: str | None = None,
+        allowed_use: list[str] | None = None,
+        exclude_not_allowed: list[str] | None = None,
+        min_evidence_level: str | None = None,
+        freshness_required: bool = False,
+        clinical_scope: str | None = None,
     ) -> list[tuple[KnowledgeChunk, float]]:
         if self._client is None:
             return []
@@ -106,7 +131,20 @@ class QdrantStore:
         for item in results:
             payload: dict[str, Any] = item.payload or {}
             chunk = KnowledgeChunk.from_dict(payload)
-            if not self._matches_filters(chunk, topic=topic, source_kind=source_kind, language=language, min_confidence=min_confidence):
+            if not self._matches_filters(
+                chunk,
+                topic=topic,
+                source_kind=source_kind,
+                language=language,
+                min_confidence=min_confidence,
+                intent=intent,
+                risk_level=risk_level,
+                allowed_use=allowed_use,
+                exclude_not_allowed=exclude_not_allowed,
+                min_evidence_level=min_evidence_level,
+                freshness_required=freshness_required,
+                clinical_scope=clinical_scope,
+            ):
                 continue
             scored.append((chunk, float(item.score or 0.0)))
         return scored

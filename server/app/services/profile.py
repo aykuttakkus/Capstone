@@ -42,6 +42,35 @@ class ProfileService:
         personalization = personalization or {}
         signals = intake_chat_signals or {}
 
+        profile.personalization_consent = bool(
+            personalization.get("personalization_consent", profile.personalization_consent)
+        )
+        profile.use_mood_context = bool(personalization.get("use_mood_context", profile.use_mood_context))
+        profile.use_journal_context = bool(personalization.get("use_journal_context", profile.use_journal_context))
+        profile.use_memory_context = bool(personalization.get("use_memory_context", profile.use_memory_context))
+
+        if not profile.personalization_consent:
+            profile.preferred_name = None
+            profile.age_group = None
+            profile.therapy_status = None
+            profile.primary_concerns = None
+            profile.communication_style = None
+            profile.response_length_preference = None
+            profile.goals_for_support = None
+            profile.coping_strategies_helpful = None
+            profile.stress_context = None
+            profile.sleep_context = None
+            profile.main_triggers = None
+            profile.support_system = None
+            profile.coping_strategies_unhelpful = None
+            profile.life_narrative = None
+            profile.use_mood_context = False
+            profile.use_journal_context = False
+            profile.use_memory_context = False
+            profile.last_profile_refresh_at = datetime.now(timezone.utc)
+            await db.flush()
+            return profile
+
         profile.preferred_name = _pick(
             str(personalization.get("preferred_name", "")),
             signals.get("preferred_name"),
@@ -87,13 +116,6 @@ class ProfileService:
             str(personalization.get("coping_strategies_unhelpful", "")),
             profile.coping_strategies_unhelpful,
         )
-        profile.personalization_consent = bool(
-            personalization.get("personalization_consent", profile.personalization_consent)
-        )
-        profile.use_mood_context = bool(personalization.get("use_mood_context", profile.use_mood_context))
-        profile.use_journal_context = bool(personalization.get("use_journal_context", profile.use_journal_context))
-        profile.use_memory_context = bool(personalization.get("use_memory_context", profile.use_memory_context))
-
         if signals.get("life_narrative"):
             profile.life_narrative = signals["life_narrative"]
 
@@ -134,4 +156,3 @@ class ProfileService:
 
 
 profile_service = ProfileService()
-

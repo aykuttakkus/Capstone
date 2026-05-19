@@ -3,7 +3,7 @@ from __future__ import annotations
 from pathlib import Path
 
 from server.app.core.config import ENABLE_GRAPH_RAG, GRAPH_RAG_MIN_CHUNKS, GRAPH_RAG_MIN_QUERY_TERMS, RETRIEVAL_BACKEND, QDRANT_COLLECTION, QDRANT_URL
-from server.app.core.retrieval.corpus import KnowledgeBase
+from server.app.core.retrieval.corpus import KnowledgeBase, metadata_matches_filters
 from server.app.core.retrieval.embeddings import EmbeddingBackend
 from server.app.core.retrieval.faiss_store import FaissIndexStore
 from server.app.core.retrieval.graph_store import GraphStore, is_graph_friendly_query, should_enable_graph_rag
@@ -38,6 +38,13 @@ class HybridRetriever:
         source_kind: str | None = None,
         language: str | None = None,
         min_confidence: float | None = None,
+        intent: str | None = None,
+        risk_level: str | None = None,
+        allowed_use: list[str] | None = None,
+        exclude_not_allowed: list[str] | None = None,
+        min_evidence_level: str | None = None,
+        freshness_required: bool = False,
+        clinical_scope: str | None = None,
     ) -> list[ScoredChunk]:
         query_embedding = self.embedder.embed(query)
         query_language = language or infer_language(query)
@@ -52,6 +59,13 @@ class HybridRetriever:
                 source_kind=source_kind,
                 language=language,
                 min_confidence=min_confidence,
+                intent=intent,
+                risk_level=risk_level,
+                allowed_use=allowed_use,
+                exclude_not_allowed=exclude_not_allowed,
+                min_evidence_level=min_evidence_level,
+                freshness_required=freshness_required,
+                clinical_scope=clinical_scope,
             )
         if not semantic_results:
             semantic_results = self.faiss_store.search(
@@ -61,6 +75,13 @@ class HybridRetriever:
                 source_kind=source_kind,
                 language=language,
                 min_confidence=min_confidence,
+                intent=intent,
+                risk_level=risk_level,
+                allowed_use=allowed_use,
+                exclude_not_allowed=exclude_not_allowed,
+                min_evidence_level=min_evidence_level,
+                freshness_required=freshness_required,
+                clinical_scope=clinical_scope,
             )
         keyword_results = self.keyword_retriever.retrieve(
             query,
@@ -69,6 +90,13 @@ class HybridRetriever:
             source_kind=source_kind,
             language=language,
             min_confidence=min_confidence,
+            intent=intent,
+            risk_level=risk_level,
+            allowed_use=allowed_use,
+            exclude_not_allowed=exclude_not_allowed,
+            min_evidence_level=min_evidence_level,
+            freshness_required=freshness_required,
+            clinical_scope=clinical_scope,
         )
         
         print(f"[DEBUG] Raw semantic results: {len(semantic_results)}, Raw keyword: {len(keyword_results)}")
@@ -97,6 +125,17 @@ class HybridRetriever:
             if language and chunk_lookup[cid].language != language:
                 continue
             if min_confidence is not None and chunk_lookup[cid].confidence < min_confidence:
+                continue
+            if not metadata_matches_filters(
+                chunk_lookup[cid],
+                intent=intent,
+                risk_level=risk_level,
+                allowed_use=allowed_use,
+                exclude_not_allowed=exclude_not_allowed,
+                min_evidence_level=min_evidence_level,
+                freshness_required=freshness_required,
+                clinical_scope=clinical_scope,
+            ):
                 continue
             sem = semantic_map.get(cid, 0.0)
             kw = keyword_map.get(cid, 0.0)

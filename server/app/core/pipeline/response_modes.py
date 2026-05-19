@@ -4,6 +4,8 @@ from dataclasses import dataclass
 from enum import Enum
 from typing import Any
 
+from server.app.utils.language_adapter import detect_language, language_adapter
+
 
 class ResponseMode(str, Enum):
     EMOTIONAL_SUPPORT = "emotional_support"
@@ -161,31 +163,52 @@ Generate a clarifying response with a reflective question."""
 
 
 class CrisisBuilder:
+    _CRISIS_NUMBERS: dict[str, dict[str, str]] = {
+        "TR": {
+            "tr": (
+                "📞 **Kriz Hatları (7/24 Açık):**\n"
+                "- İntihar Önleme Hattı: **182**\n"
+                "- ALO 182 (Türkiye Çocukları Koruma Merkezi)\n"
+                "- IASP Kriz Merkezleri: https://www.iasp.info/resources/Crisis_Centres/\n\n"
+                "🏥 **Acil Durum:** Hemen 112'yi arayın veya en yakın acil servise gidin."
+            ),
+            "en": (
+                "📞 **Crisis Lines (Turkey, 24/7):**\n"
+                "- Suicide Prevention: **182**\n"
+                "- IASP Crisis Centres: https://www.iasp.info/resources/Crisis_Centres/\n\n"
+                "🏥 **Emergency:** Call 112 or go to the nearest emergency room."
+            ),
+        },
+        "US": {
+            "en": (
+                "📞 **Crisis Lines (24/7):**\n"
+                "- Suicide & Crisis Lifeline: **988**\n"
+                "- Crisis Text Line: Text HOME to **741741**\n"
+                "- IASP: https://www.iasp.info/resources/Crisis_Centres/\n\n"
+                "🏥 **Emergency:** Call 911 or go to the nearest emergency room."
+            ),
+            "tr": (
+                "📞 **Kriz Hatları (ABD, 7/24):**\n"
+                "- İntihar & Kriz Yaşam Hattı: **988**\n"
+                "- IASP: https://www.iasp.info/resources/Crisis_Centres/\n\n"
+                "🏥 **Acil:** 911'i arayın veya en yakın acil servise gidin."
+            ),
+        },
+    }
+
     def build(self, context: ResponseModeContext) -> str:
-        crisis_response = f"""I'm concerned about your safety based on what you've shared.
+        lang = detect_language(context.user_message)
+        country = "TR"  # Default to Turkey for this deployment
+        numbers_block = self._CRISIS_NUMBERS.get(country, self._CRISIS_NUMBERS["TR"]).get(lang, "")
 
-Your message: "{context.user_message}"
+        if lang == "tr":
+            intro = f"Paylaştıklarına dayanarak güvenliğinizden endişe duyuyorum.\n\nMesajınız: \"{context.user_message}\""
+            closing = "Şu an güvendiğiniz biri (arkadaş, aile, danışman) ile konuşabilir misiniz?"
+        else:
+            intro = f"I'm concerned about your safety based on what you've shared.\n\nYour message: \"{context.user_message}\""
+            closing = "Is there someone you trust (friend, family, counselor) you can talk to right now?"
 
-**IMMEDIATE RESOURCES:**
-
-📞 **Crisis Hotlines (Available 24/7):**
-- National Suicide Prevention Lifeline: 988 (US)
-- Crisis Text Line: Text HOME to 741741
-- International Association for Suicide Prevention: https://www.iasp.info/resources/Crisis_Centres/
-
-🏥 **Emergency:**
-- If you're in immediate danger, call emergency services (911 in US)
-- Go to the nearest emergency room
-- Tell someone you trust immediately
-
-💬 **What happens next:**
-Your safety is the priority. Professional counselors at these services are trained to help with what you're experiencing.
-
-I'm here to provide support and information, but for your immediate safety, please reach out to a crisis service. They have specialized training and resources I don't.
-
-Is there someone you trust (friend, family, counselor) you can talk to right now?"""
-
-        return crisis_response
+        return f"{intro}\n\n{numbers_block}\n\n💬 Your safety is the priority. Please reach out to a crisis service — they have specialized training I don't.\n\n{closing}"
 
 
 class RepairBuilder:
@@ -240,6 +263,30 @@ Your question about "{context.user_message}" involves {context.topic}, which isn
 Is there something within my scope I can help you with instead?"""
 
         return off_scope_response
+
+
+_MODE_MAX_WORDS: dict[str, int] = {
+    ResponseMode.EMOTIONAL_SUPPORT: 120,
+    ResponseMode.PSYCHOEDUCATION: 280,
+    ResponseMode.COPING_STRATEGY: 220,
+    ResponseMode.SYMPTOM_EXPLORATION: 200,
+    ResponseMode.CLARIFICATION: 100,
+    ResponseMode.CRISIS: 90,
+    ResponseMode.REPAIR: 100,
+    ResponseMode.OFF_SCOPE: 80,
+}
+
+
+def enforce_length_constraint(response: str, mode: ResponseMode) -> str:
+    """Trim response to the spec word limit for the given response mode."""
+    max_words = _MODE_MAX_WORDS.get(mode, 200)
+    words = response.split()
+    if len(words) <= max_words:
+        return response
+    trimmed = " ".join(words[:max_words])
+    if not trimmed.endswith((".", "!", "?")):
+        trimmed = trimmed.rstrip(",;:") + "."
+    return trimmed
 
 
 class ResponseModeSelector:

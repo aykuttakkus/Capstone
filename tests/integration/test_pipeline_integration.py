@@ -92,6 +92,59 @@ class TestContextManager:
         assert "Conversation Context Summary" in summary
         assert "anxiety" in summary
 
+    def test_context_package_limits_recent_turns(self):
+        cm = ContextManager()
+        history = [{"role": "user", "content": f"turn {idx}"} for idx in range(12)]
+
+        package = cm.build_context_package(
+            current_user_message="Current message",
+            recent_conversation=history,
+            max_turns=8,
+        )
+
+        assert len(package.recent_conversation) == 8
+        assert package.recent_conversation[0]["content"] == "turn 4"
+        assert package.current_user_message == "Current message"
+
+    def test_context_package_keeps_risk_state_separate(self):
+        cm = ContextManager()
+        risk_state = RiskState(current_risk_level="high")
+        risk_state.escalate("persistent distress")
+
+        package = cm.build_context_package(
+            current_user_message="I feel a bit calmer now",
+            session_summary={"recap": "Prior anxiety and panic."},
+            risk_state=risk_state,
+        )
+
+        assert package.risk_state is risk_state
+        assert package.risk_state.current_risk_level == "high"
+        assert package.response_policy["escalation_required"] is True
+
+    def test_context_package_detects_contradiction_with_old_summary(self):
+        cm = ContextManager()
+
+        package = cm.build_context_package(
+            current_user_message="It is better now, I slept okay.",
+            session_summary={"recap": "Topic: stress. User was anxious and stressed."},
+        )
+
+        assert "latest_message_may_update_or_resolve_prior_distress" in package.possible_contradictions
+        assert "sleep_impact" in package.new_context_signals
+
+    def test_context_package_tracks_previously_suggested_strategy(self):
+        cm = ContextManager()
+
+        package = cm.build_context_package(
+            current_user_message="What else can I try?",
+            recent_conversation=[
+                {"role": "assistant", "content": "Try breathing slowly and use 5-4-3-2-1 grounding."}
+            ],
+            session_summary={"coping_tried": ["journaling"]},
+        )
+
+        assert package.previously_suggested_strategies == ["breathing", "grounding", "journaling"]
+
 
 class TestIntentDetector:
     def test_detect_psychoeducation(self):
@@ -99,6 +152,7 @@ class TestIntentDetector:
         result = id.detect("How does anxiety affect the brain?")
 
         assert result.intent in ["psychoeducation", "emotional_support"]
+        assert result.primary_intent == result.intent
         assert result.confidence > 0.3
 
     def test_detect_coping_strategy(self):
@@ -124,6 +178,7 @@ class TestIntentDetector:
         result = id.detect("I want to kill myself")
 
         assert result.intent == "crisis"
+        assert result.primary_intent == "crisis"
         assert result.confidence >= 0.9
 
     def test_detect_off_scope(self):
@@ -147,6 +202,14 @@ class TestIntentDetector:
 
         assert isinstance(explanation, str)
         assert len(explanation) > 0
+
+    def test_detect_mixed_intent(self):
+        id = IntentDetector()
+        result = id.detect("I feel overwhelmed, can you explain why this happens and what can I do to manage it?")
+
+        assert result.primary_intent in {"emotional_support", "psychoeducation", "coping_strategy"}
+        assert result.secondary_intents
+        assert "coping_strategy" in [result.primary_intent, *result.secondary_intents]
 
 
 class TestPipelineOrchestrator:

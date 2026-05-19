@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 
-from server.app.core.retrieval.corpus import KnowledgeBase, KnowledgeChunk
+from server.app.core.retrieval.corpus import KnowledgeBase, KnowledgeChunk, metadata_matches_filters
 from server.app.utils.text import fuzzy_token_overlap, infer_language, tokenize
 
 
@@ -43,6 +43,13 @@ class SimpleRetriever:
         source_kind: str | None = None,
         language: str | None = None,
         min_confidence: float | None = None,
+        intent: str | None = None,
+        risk_level: str | None = None,
+        allowed_use: list[str] | None = None,
+        exclude_not_allowed: list[str] | None = None,
+        min_evidence_level: str | None = None,
+        freshness_required: bool = False,
+        clinical_scope: str | None = None,
     ) -> bool:
         if topic and chunk.topic != topic and not any(part in chunk.topic for part in topic.split("_") if part):
             return False
@@ -51,6 +58,17 @@ class SimpleRetriever:
         if language and chunk.language != language:
             return False
         if min_confidence is not None and chunk.confidence < min_confidence:
+            return False
+        if not metadata_matches_filters(
+            chunk,
+            intent=intent,
+            risk_level=risk_level,
+            allowed_use=allowed_use,
+            exclude_not_allowed=exclude_not_allowed,
+            min_evidence_level=min_evidence_level,
+            freshness_required=freshness_required,
+            clinical_scope=clinical_scope,
+        ):
             return False
         return True
 
@@ -63,6 +81,13 @@ class SimpleRetriever:
         source_kind: str | None = None,
         language: str | None = None,
         min_confidence: float | None = None,
+        intent: str | None = None,
+        risk_level: str | None = None,
+        allowed_use: list[str] | None = None,
+        exclude_not_allowed: list[str] | None = None,
+        min_evidence_level: str | None = None,
+        freshness_required: bool = False,
+        clinical_scope: str | None = None,
     ) -> list[ScoredChunk]:
         query_terms = set(tokenize(query))
         topic_terms = set(tokenize(topic or ""))
@@ -70,7 +95,20 @@ class SimpleRetriever:
         scored: list[ScoredChunk] = []
 
         for chunk in self.knowledge_base.chunks:
-            if not self._matches_filters(chunk, topic=topic, source_kind=source_kind, language=language, min_confidence=min_confidence):
+            if not self._matches_filters(
+                chunk,
+                topic=topic,
+                source_kind=source_kind,
+                language=language,
+                min_confidence=min_confidence,
+                intent=intent,
+                risk_level=risk_level,
+                allowed_use=allowed_use,
+                exclude_not_allowed=exclude_not_allowed,
+                min_evidence_level=min_evidence_level,
+                freshness_required=freshness_required,
+                clinical_scope=clinical_scope,
+            ):
                 continue
             chunk_terms = set(tokenize(f"{chunk.title} {chunk.content} {' '.join(chunk.keywords)}"))
             overlap = len(query_terms & chunk_terms)

@@ -4,7 +4,7 @@ import json
 
 import pytest
 
-from server.app.core.agents.memory_agent import MemoryAgent
+from server.app.core.agents.memory_agent import MemoryAgent, MemoryUpdateResult
 from server.app.core.generation.base import MockLLMBackend, UnavailableLLMBackend
 
 
@@ -82,3 +82,28 @@ def test_summarize_interaction_merges_structured_llm_output() -> None:
     assert parsed["preferred_name"] == "Aykut"
     assert parsed["mood_trend"][-1] == 7
     assert parsed["recurring_themes"][0]["theme"] == "stress"
+
+
+def test_summarize_interaction_tracks_strategy_history_minimally() -> None:
+    agent = MemoryAgent(llm=UnavailableLLMBackend())
+
+    result = agent.summarize_interaction(
+        "Breathing didn't help last time.",
+        "Try a short grounding exercise and then journal one line.",
+        "{}",
+    )
+    parsed = json.loads(result)
+
+    assert parsed["suggested_strategies"] == ["grounding", "journaling"]
+    assert parsed["unhelpful_strategies"] == ["breathing"]
+
+
+def test_memory_update_result_contract_is_structured() -> None:
+    result = MemoryUpdateResult(
+        updated_session_summary={"main_concern": "stress"},
+        updated_risk_state={"level": "low"},
+        memory_update_notes=["stored minimal summary"],
+    )
+
+    assert result.updated_session_summary["main_concern"] == "stress"
+    assert result.memory_update_notes == ["stored minimal summary"]

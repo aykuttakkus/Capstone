@@ -86,6 +86,24 @@ class ChatSession(Base):
     archived_at = Column(DateTime(timezone=True), nullable=True)
 
 
+class SessionRiskState(Base):
+    __tablename__ = "session_risk_states"
+
+    id = Column(Integer, primary_key=True, index=True)
+    session_id = Column(Integer, ForeignKey("sessions.id"), nullable=False, unique=True, index=True)
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=False, index=True)
+    current_risk_level = Column(String, nullable=False, default="none")
+    risk_indicators_json = Column(Text, nullable=True)
+    cumulative_risk_signals_json = Column(Text, nullable=True)
+    crisis_protocol_active = Column(Boolean, nullable=False, default=False)
+    needs_human_support = Column(Boolean, nullable=False, default=False)
+    last_risk_check = Column(DateTime(timezone=True), nullable=True)
+    safety_analysis_reasoning = Column(Text, nullable=True)
+    escalation_recommended = Column(Boolean, nullable=False, default=False)
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+    updated_at = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
+
+
 class MemorySegment(Base):
     __tablename__ = "memory_segments"
 

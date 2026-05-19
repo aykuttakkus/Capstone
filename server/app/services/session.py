@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import json
 from dataclasses import dataclass
 
 
@@ -49,11 +50,36 @@ def build_session_summary(
 ) -> SessionSummary:
     main_issue = intake.get("main_issue", "")
     help_type = intake.get("help_type", "")
-    prior = f"Prior context: {previous_summary[:120].strip()}. " if previous_summary else ""
-    recap = (
-        f"{prior}Topic: {topic}. Intent: {intent}. Safety mode: {safety_mode}. "
-        f"Intake: {main_issue or 'n/a'} / {help_type or 'n/a'}. "
-        f"Response: {response_answer[:180].strip()}"
-    )
-    recap = compact_memory_text(recap, max_chars=380)
+    previous = _parse_summary(previous_summary)
+    structured = {
+        "main_concern": main_issue or previous.get("main_concern", ""),
+        "emotional_state": previous.get("emotional_state", ""),
+        "triggers": _bounded_list(previous.get("triggers", [])),
+        "coping_tried": _bounded_list(previous.get("coping_tried", [])),
+        "coping_effectiveness": previous.get("coping_effectiveness", {})
+        if isinstance(previous.get("coping_effectiveness"), dict)
+        else {},
+        "user_goal": help_type or previous.get("user_goal", ""),
+        "last_response_mode": intent,
+        "important_new_information": _bounded_list([f"Topic: {topic}", f"Safety mode: {safety_mode}"]),
+        "response_preview": compact_memory_text(response_answer, max_chars=180),
+    }
+    recap = json.dumps(structured, ensure_ascii=False, separators=(",", ":"))
+    recap = compact_memory_text(recap, max_chars=700)
     return SessionSummary(topic=topic, intent=intent, safety_mode=safety_mode, recap=recap)
+
+
+def _parse_summary(summary: str | None) -> dict:
+    if not summary:
+        return {}
+    try:
+        parsed = json.loads(summary)
+    except json.JSONDecodeError:
+        return {"important_new_information": [compact_memory_text(summary, max_chars=160)]}
+    return parsed if isinstance(parsed, dict) else {}
+
+
+def _bounded_list(value: object, limit: int = 6) -> list[str]:
+    if not isinstance(value, list):
+        return []
+    return [str(item)[:120] for item in value if str(item).strip()][:limit]

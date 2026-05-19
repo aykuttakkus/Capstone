@@ -61,3 +61,15 @@ class ChatResponse(BaseModel):
     context_used: dict[str, bool] = Field(default_factory=dict)
     care_plan_hint: str | None = None
     clinical_nugget: str | None = None
+    
+    # Phase 11: Diagnostic fields for evaluation and debugging
+    pipeline_mode: str | None = None
+    response_mode: str | None = None
+    risk_level: str | None = None
+    intent_confidence: float | None = None
+    secondary_intents: list[str] = Field(default_factory=list)
+    retrieval_confidence: float | None = None
+    critic_warnings: list[str] = Field(default_factory=list)
+    fallback_used: bool = False
+    boundary_applied: bool = False
+    escalation_required: bool = False
