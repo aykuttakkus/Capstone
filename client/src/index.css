@@ -2605,7 +2605,6 @@ button.history-item {
 /* Source Panel */
 .source-tag {
   background: rgba(79, 93, 255, 0.08);
-  border: 1px solid var(--surface-border);
   color: var(--accent);
   padding: 0.35rem 0.75rem;
   border-radius: 999px;

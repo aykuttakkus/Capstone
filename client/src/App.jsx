@@ -1412,7 +1412,7 @@ function App() {
                     )}
 
                     {msg.data?.sources?.length > 0 && (
-                      <div className="mt-4 pt-4 border-t border-white/5">
+                      <div className="mt-3">
                         <button
                           onClick={() => setOpenSources(prev => {
                             const next = new Set(prev);
