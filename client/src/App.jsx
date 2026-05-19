@@ -270,6 +270,7 @@ function App() {
   const [securityMode, setSecurityMode] = useState('overview');
   const [passwordDraft, setPasswordDraft] = useState({ current: '', next: '', confirm: '' });
   const [menuPosition, setMenuPosition] = useState({ top: 0, left: 0 });
+  const [openSources, setOpenSources] = useState(new Set());
 
   const messagesEndRef = useRef(null);
   const textareaRef = useRef(null);
@@ -1412,27 +1413,37 @@ function App() {
 
                     {msg.data?.sources?.length > 0 && (
                       <div className="mt-4 pt-4 border-t border-white/5">
-                        <div className="flex items-center gap-2 text-xs font-semibold text-muted mb-2">
-                          <FileText size={14} />
-                          SUPPORT SOURCES
-                        </div>
-                        <div className="flex flex-wrap gap-2">
-                          {msg.data.sources.map((src, sidx) => (
-                            <div key={sidx} className="source-tag">
-                              <div className="font-semibold">{src.title}</div>
-                              <div className="text-[11px] text-muted mt-1">
-                                {src.source}
-                                {src.section ? ` · ${src.section}` : ''}
-                                {src.page ? ` · p.${src.page}` : ''}
+                        <button
+                          onClick={() => setOpenSources(prev => {
+                            const next = new Set(prev);
+                            next.has(idx) ? next.delete(idx) : next.add(idx);
+                            return next;
+                          })}
+                          className="flex items-center gap-1.5 text-xs text-muted hover:text-slate-300 transition-colors"
+                        >
+                          <FileText size={13} />
+                          <span>{msg.data.sources.length} source{msg.data.sources.length > 1 ? 's' : ''}</span>
+                          <ChevronDown size={13} className={`transition-transform duration-200 ${openSources.has(idx) ? 'rotate-180' : ''}`} />
+                        </button>
+                        {openSources.has(idx) && (
+                          <div className="flex flex-wrap gap-2 mt-2">
+                            {msg.data.sources.map((src, sidx) => (
+                              <div key={sidx} className="source-tag">
+                                <div className="font-semibold">{src.title}</div>
+                                <div className="text-[11px] text-muted mt-1">
+                                  {src.source}
+                                  {src.section ? ` · ${src.section}` : ''}
+                                  {src.page ? ` · p.${src.page}` : ''}
+                                </div>
+                                <div className="mt-1 flex flex-wrap gap-1 text-[10px] text-muted uppercase tracking-wide">
+                                  {src.source_kind && <span>{src.source_kind.replace(/_/g, ' ')}</span>}
+                                  {src.language && <span>{src.language}</span>}
+                                  {typeof src.confidence === 'number' && <span>conf {src.confidence.toFixed(2)}</span>}
+                                </div>
                               </div>
-                              <div className="mt-1 flex flex-wrap gap-1 text-[10px] text-muted uppercase tracking-wide">
-                                {src.source_kind && <span>{src.source_kind.replace(/_/g, ' ')}</span>}
-                                {src.language && <span>{src.language}</span>}
-                                {typeof src.confidence === 'number' && <span>conf {src.confidence.toFixed(2)}</span>}
-                              </div>
-                            </div>
-                          ))}
-                        </div>
+                            ))}
+                          </div>
+                        )}
                       </div>
                     )}
                   </div>
