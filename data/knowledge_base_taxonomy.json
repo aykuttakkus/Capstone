@@ -1,0 +1,180 @@
+{
+  "taxonomy_version": "1.0",
+  "last_updated": "2026-05-19",
+  "topics": [
+    {
+      "topic_id": "anxiety",
+      "topic_name": "Anxiety",
+      "allowed_uses": ["psychoeducation", "coping_strategy", "symptom_exploration", "emotional_support"],
+      "not_allowed": ["diagnosis", "medication_advice", "therapy"],
+      "evidence_level": "peer_reviewed",
+      "clinical_scope": "psychoeducation_only",
+      "description": "Understanding anxiety as a natural emotion and how to manage it."
+    },
+    {
+      "topic_id": "depression",
+      "topic_name": "Depression",
+      "allowed_uses": ["psychoeducation", "coping_strategy", "emotional_support"],
+      "not_allowed": ["diagnosis", "medication_advice", "therapy", "antidepressant_recommendations"],
+      "evidence_level": "peer_reviewed",
+      "clinical_scope": "psychoeducation_only",
+      "description": "Understanding depression, its impacts, and evidence-based coping approaches."
+    },
+    {
+      "topic_id": "loneliness",
+      "topic_name": "Loneliness & Social Connection",
+      "allowed_uses": ["psychoeducation", "coping_strategy", "emotional_support"],
+      "not_allowed": ["romantic_advice", "friendship_formation_guarantees"],
+      "evidence_level": "peer_reviewed",
+      "clinical_scope": "psychoeducation_only",
+      "description": "The psychology of loneliness and strategies for building meaningful connections."
+    },
+    {
+      "topic_id": "self_esteem",
+      "topic_name": "Self-Esteem & Self-Worth",
+      "allowed_uses": ["psychoeducation", "coping_strategy", "emotional_support"],
+      "not_allowed": ["affirmations_only", "unrealistic_positivity"],
+      "evidence_level": "peer_reviewed",
+      "clinical_scope": "psychoeducation_only",
+      "description": "Building self-esteem through realistic and evidence-based approaches."
+    },
+    {
+      "topic_id": "stress",
+      "topic_name": "Stress Management",
+      "allowed_uses": ["psychoeducation", "coping_strategy", "emotional_support"],
+      "not_allowed": ["stress_elimination_promises", "medication_advice"],
+      "evidence_level": "peer_reviewed",
+      "clinical_scope": "psychoeducation_only",
+      "description": "Understanding stress and developing evidence-based stress management skills."
+    },
+    {
+      "topic_id": "sleep",
+      "topic_name": "Sleep & Sleep Hygiene",
+      "allowed_uses": ["psychoeducation", "coping_strategy", "emotional_support"],
+      "not_allowed": ["sleep_medication_recommendations", "insomnia_diagnosis"],
+      "evidence_level": "peer_reviewed",
+      "clinical_scope": "psychoeducation_only",
+      "description": "Sleep science and evidence-based sleep improvement techniques."
+    },
+    {
+      "topic_id": "emotion_regulation",
+      "topic_name": "Emotion Regulation",
+      "allowed_uses": ["psychoeducation", "coping_strategy", "emotional_support"],
+      "not_allowed": ["emotion_suppression_promotion", "unhealthy_coping_strategies"],
+      "evidence_level": "peer_reviewed",
+      "clinical_scope": "psychoeducation_only",
+      "description": "Understanding emotions and healthy ways to manage them."
+    },
+    {
+      "topic_id": "body_image",
+      "topic_name": "Body Image & Body Dissatisfaction",
+      "allowed_uses": ["psychoeducation", "coping_strategy", "emotional_support"],
+      "not_allowed": ["diet_advice", "extreme_fitness_recommendations", "eating_disorder_promotion"],
+      "evidence_level": "peer_reviewed",
+      "clinical_scope": "psychoeducation_only",
+      "description": "Understanding body image concerns and developing a healthier relationship with one's body."
+    },
+    {
+      "topic_id": "perfectionism",
+      "topic_name": "Perfectionism & Performance Anxiety",
+      "allowed_uses": ["psychoeducation", "coping_strategy", "emotional_support"],
+      "not_allowed": ["eliminating_all_standards", "unrealistic_goals"],
+      "evidence_level": "peer_reviewed",
+      "clinical_scope": "psychoeducation_only",
+      "description": "The psychology of perfectionism and strategies for adaptive goal-setting."
+    },
+    {
+      "topic_id": "social_anxiety",
+      "topic_name": "Social Anxiety",
+      "allowed_uses": ["psychoeducation", "coping_strategy", "emotional_support"],
+      "not_allowed": ["social_isolation_promotion", "avoidance_reinforcement"],
+      "evidence_level": "peer_reviewed",
+      "clinical_scope": "psychoeducation_only",
+      "description": "Understanding social anxiety and evidence-based approaches to managing it."
+    },
+    {
+      "topic_id": "relationships",
+      "topic_name": "Relationships & Communication",
+      "allowed_uses": ["psychoeducation", "coping_strategy", "emotional_support"],
+      "not_allowed": ["relationship_therapy", "couples_intervention", "breakup_forcing"],
+      "evidence_level": "peer_reviewed",
+      "clinical_scope": "psychoeducation_only",
+      "description": "Communication skills, boundary-setting, and healthy relationship dynamics."
+    },
+    {
+      "topic_id": "grief_loss",
+      "topic_name": "Grief & Loss",
+      "allowed_uses": ["psychoeducation", "emotional_support", "coping_strategy"],
+      "not_allowed": ["grief_pathologization", "timeline_prescriptions"],
+      "evidence_level": "peer_reviewed",
+      "clinical_scope": "psychoeducation_only",
+      "description": "Understanding grief as a natural process and strategies for navigating loss."
+    },
+    {
+      "topic_id": "resilience",
+      "topic_name": "Resilience & Post-Traumatic Growth",
+      "allowed_uses": ["psychoeducation", "coping_strategy", "emotional_support"],
+      "not_allowed": ["trauma_glorification", "toxic_positivity"],
+      "evidence_level": "peer_reviewed",
+      "clinical_scope": "psychoeducation_only",
+      "description": "Building resilience and understanding how people adapt after adversity."
+    },
+    {
+      "topic_id": "rumination",
+      "topic_name": "Rumination & Overthinking",
+      "allowed_uses": ["psychoeducation", "coping_strategy", "emotional_support"],
+      "not_allowed": ["thought_suppression", "avoidance_strategies"],
+      "evidence_level": "peer_reviewed",
+      "clinical_scope": "psychoeducation_only",
+      "description": "Understanding rumination and evidence-based strategies for managing repetitive thoughts."
+    },
+    {
+      "topic_id": "boundaries",
+      "topic_name": "Healthy Boundaries",
+      "allowed_uses": ["psychoeducation", "coping_strategy", "emotional_support"],
+      "not_allowed": ["isolation_disguised_as_boundaries", "relationship_cutting_advice"],
+      "evidence_level": "peer_reviewed",
+      "clinical_scope": "psychoeducation_only",
+      "description": "Understanding personal boundaries and developing assertiveness skills."
+    },
+    {
+      "topic_id": "procrastination",
+      "topic_name": "Procrastination & Motivation",
+      "allowed_uses": ["psychoeducation", "coping_strategy", "emotional_support"],
+      "not_allowed": ["productivity_extremism", "self-blame_promotion"],
+      "evidence_level": "peer_reviewed",
+      "clinical_scope": "psychoeducation_only",
+      "description": "Understanding procrastination and evidence-based motivation strategies."
+    },
+    {
+      "topic_id": "self_compassion",
+      "topic_name": "Self-Compassion & Self-Kindness",
+      "allowed_uses": ["psychoeducation", "coping_strategy", "emotional_support"],
+      "not_allowed": ["accountability_elimination", "self_indulgence_promotion"],
+      "evidence_level": "peer_reviewed",
+      "clinical_scope": "psychoeducation_only",
+      "description": "Practicing self-compassion as a foundation for psychological well-being."
+    },
+    {
+      "topic_id": "gratitude",
+      "topic_name": "Gratitude & Appreciation",
+      "allowed_uses": ["psychoeducation", "coping_strategy", "emotional_support"],
+      "not_allowed": ["toxic_positivity", "denial_of_real_problems"],
+      "evidence_level": "peer_reviewed",
+      "clinical_scope": "psychoeducation_only",
+      "description": "Research on gratitude and its role in well-being."
+    }
+  ],
+  "usage_guidelines": {
+    "psychoeducation": "Providing factual, evidence-based information about psychological concepts and phenomena.",
+    "coping_strategy": "Suggesting concrete, actionable techniques for managing emotional or behavioral challenges.",
+    "symptom_exploration": "Helping users understand and observe their own experiences without diagnosis.",
+    "emotional_support": "Validating feelings and normalizing experiences.",
+    "clarification": "Asking questions to help users better understand their own situation."
+  },
+  "scope_limitations": {
+    "psychoeducation_only": "All uses must remain educational and non-clinical. No diagnosis, treatment, or therapy.",
+    "strict_boundaries": "All uses must maintain professional boundaries without creating dependence.",
+    "risk_awareness": "Content must be contextualized appropriately for different risk levels."
+  }
+}

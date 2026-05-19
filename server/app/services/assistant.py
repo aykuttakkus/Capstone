@@ -32,6 +32,10 @@ from server.app.core.agents.orchestrator import Orchestrator
 from server.app.core.agents.response_planner import ResponsePlan
 from server.app.core.agents.safety_guardian import SafetyAnalysis
 from server.app.core.agents.memory_agent import MemoryAgent
+from server.app.core.agents.distress_monitor import SubtleDistressMonitor
+from server.app.core.agents.dependency_critic import DependencyCritic
+from server.app.core.agents.quality_critic import QualityCritic
+from server.app.core.agents.fallback_handler import FallbackHandler
 from server.app.utils.audit_logger import ClinicalAuditLogger
 from server.app.models.sql.models import User, Memory, Conversation, ChatSession
 from server.app.services.journal import journal_service
@@ -63,6 +67,12 @@ class AssistantService:
         self.memory_agent = MemoryAgent()
         self.audit_logger = ClinicalAuditLogger()
         self.nuggetizer = nuggetizer
+
+        # Phase 1: Critical safety and quality modules
+        self.distress_monitor = SubtleDistressMonitor()
+        self.dependency_critic = DependencyCritic()
+        self.quality_critic = QualityCritic()
+        self.fallback_handler = FallbackHandler()
 
     # ------------------------------------------------------------------
     # Persistence Helpers
