@@ -36,6 +36,7 @@ import {
   Lightbulb,
 } from 'lucide-react';
 import { API_URL } from './config';
+import calmaLogo from './assets/Calma_Logo.png';
 
 const APP_NAME = 'Calma';
 const TOKEN_KEY = 'calma_token';
@@ -183,6 +184,24 @@ const mapSessionItems = (items = []) =>
       summary: item.summary,
     }))
     .sort((a, b) => b.sortKey - a.sortKey);
+
+const upsertSessionPreview = (items = [], sessionId, title, { archived = false } = {}) => {
+  const now = Date.now();
+  const filtered = items.filter((item) => String(item.id) !== String(sessionId));
+  return [
+    {
+      id: sessionId,
+      title: truncateText(title || 'Session'),
+      date: 'just now',
+      sortKey: now,
+      safetyMode: 'neutral',
+      status: archived ? 'archived' : 'active',
+      topic: null,
+      summary: null,
+    },
+    ...filtered,
+  ].sort((a, b) => (b.sortKey || 0) - (a.sortKey || 0));
+};
 
 const getErrorMessage = (error, fallback) =>
   error?.response?.data?.detail || error?.message || fallback;
@@ -349,6 +368,7 @@ function App() {
   const loadHistory = useCallback(async (query = '') => {
     const trimmedQuery = query.trim();
     setSessionPanelError('');
+    console.log('[CHAT DEBUG] loadHistory', { query: trimmedQuery });
 
     const [activeRes, archivedRes] = await Promise.all([
       api.get('/sessions/', {
@@ -357,11 +377,16 @@ function App() {
       api.get('/sessions/', { params: { status: 'archived', limit: 20 } }),
     ]);
 
-      setHistory(mapSessionItems(activeRes.data));
-      setArchivedHistory(mapSessionItems(archivedRes.data));
+    setHistory(mapSessionItems(activeRes.data));
+    setArchivedHistory(mapSessionItems(archivedRes.data));
+    console.log('[CHAT DEBUG] loadHistory result', {
+      activeCount: activeRes.data?.length ?? 0,
+      archivedCount: archivedRes.data?.length ?? 0,
+    });
   }, []);
 
   const loadAppData = useCallback(async () => {
+    console.log('[CHAT DEBUG] loadAppData start');
     const [meRes, configRes, activeSessionsRes, archivedSessionsRes] = await Promise.all([
       api.get('/auth/me'),
       api.get('/config'),
@@ -373,6 +398,11 @@ function App() {
     setConfig(configRes.data);
     setHistory(mapSessionItems(activeSessionsRes.data));
     setArchivedHistory(mapSessionItems(archivedSessionsRes.data));
+    console.log('[CHAT DEBUG] loadAppData sessions', {
+      activeCount: activeSessionsRes.data?.length ?? 0,
+      archivedCount: archivedSessionsRes.data?.length ?? 0,
+      userId: meRes.data?.id,
+    });
     setIsArchivedChatsOpen(false);
     setIsAuthenticated(true);
     setSessionError('');
@@ -546,6 +576,7 @@ function App() {
   }, []);
 
   const startNewSession = () => {
+    console.log('[CHAT DEBUG] startNewSession');
     setActiveSessionId(null);
     setNewSessionRequested(true);
     setSessionPanelError('');
@@ -569,11 +600,17 @@ function App() {
 
   const handleSessionSelect = async (sessionId) => {
     try {
+      console.log('[CHAT DEBUG] handleSessionSelect', { sessionId });
       setSessionPanelError('');
       setOpenSessionMenuId(null);
       setActiveSessionId(sessionId);
       activeSessionIdRef.current = sessionId;
       const { data } = await api.get(`/sessions/${sessionId}`);
+      console.log('[CHAT DEBUG] session loaded', {
+        sessionId,
+        messageCount: data?.messages?.length ?? 0,
+        status: data?.status,
+      });
       setNewSessionRequested(false);
       setMessages((data.messages ?? []).map((message) => ({
         role: message.role,
@@ -930,12 +967,24 @@ function App() {
   const submitMessage = async (text) => {
     if (!text.trim() || isLoading) return;
 
+    console.log('[CHAT DEBUG] submitMessage', {
+      text,
+      activeSessionId,
+      newSessionRequested,
+      historyLength: messages.length,
+    });
+
     const userMsg = { role: 'user', content: text };
     const nextMessages = [...messages, userMsg];
     const payloadHistory = nextMessages.map((message) => ({
       role: message.role,
       content: message.content,
     }));
+
+    // Optimistically surface the active/new chat in the sidebar immediately.
+    const optimisticSessionId = activeSessionId || `temp-${Date.now()}`;
+    const isOptimisticNewSession = !activeSessionId;
+    setHistory((prev) => upsertSessionPreview(prev, optimisticSessionId, text));
 
     setMessages(nextMessages);
     setInputText('');
@@ -960,6 +1009,14 @@ function App() {
           use_journal_context: profileState?.use_journal_context ?? profileDraft.useJournalContext,
           use_memory_context: profileState?.use_memory_context ?? profileDraft.useMemoryContext,
         },
+      });
+
+      console.log('[CHAT DEBUG] chat response', {
+        sessionId: response.data?.session_id,
+        answerLength: response.data?.answer?.length ?? 0,
+        route: response.data?.route,
+        responseMode: response.data?.response_mode,
+        fallbackUsed: response.data?.fallback_used,
       });
 
       setMessages((prev) => [
@@ -989,6 +1046,10 @@ function App() {
           content: 'The support assistant is currently unavailable. Please try again.',
         },
       ]);
+
+      if (isOptimisticNewSession) {
+        setHistory((prev) => prev.filter((item) => String(item.id) !== String(optimisticSessionId)));
+      }
     } finally {
       setIsLoading(false);
     }
@@ -1313,7 +1374,7 @@ function App() {
               ) : (
                 <div key={idx} className="message-row assistant">
                   <div className="avatar avatar-assistant" aria-hidden="true">
-                    <Sparkles size={18} />
+                    <img src={calmaLogo} alt="" className="assistant-avatar-logo" />
                   </div>
                   <div className="message-content">
                     {msg.data?.status === 'crisis' && (
@@ -1382,7 +1443,7 @@ function App() {
             {isLoading && (
               <div className="message-row assistant">
                 <div className="avatar avatar-assistant">
-                  <Sparkles size={18} />
+                  <img src={calmaLogo} alt="" className="assistant-avatar-logo" />
                 </div>
                 <div className="message-content typing-indicator" aria-label="Assistant is typing">
                   <span className="typing-dot" />

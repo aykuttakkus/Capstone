@@ -98,7 +98,7 @@ class HybridRetriever:
             freshness_required=freshness_required,
             clinical_scope=clinical_scope,
         )
-        
+
         max_kw_score = max((r.score for r in keyword_results), default=1.0) or 1.0
 
         semantic_map: dict[str, float] = {chunk.id: score for chunk, score in semantic_results}
@@ -146,6 +146,5 @@ class HybridRetriever:
             scored.append(ScoredChunk(chunk=chunk_lookup[cid], score=combined))
 
         scored.sort(key=lambda x: (x.score, topic_alignment_score(topic, x.chunk.topic), x.chunk.id), reverse=True)
-        
 
         return scored[:k]

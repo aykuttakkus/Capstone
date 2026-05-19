@@ -60,9 +60,10 @@ test-integration:
 	pytest -m integration tests/integration
 
 test-eval:
-	@echo "📊 Running evaluation contracts and benchmark..."
-	pytest -m eval tests/eval/test_eval_contract.py
-	python3 tests/eval/run_eval.py
+	@echo "📊 Running evaluation benchmarks..."
+	python3 tests/jtest.py
+	python3 -m server.app.evaluation.spec_eval
+	python3 -m server.app.evaluation.rag_eval
 
 frontend-check:
 	@echo "🎨 Running frontend validation..."

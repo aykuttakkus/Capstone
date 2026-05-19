@@ -1,44 +1,43 @@
 # Calma
 
-Calma is a psychology-oriented, safety-aware RAG assistant for psychoeducational mental health support. It is designed to answer from curated sources, refuse unsafe requests, and stay grounded in evidence.
+## Overview
+Calma is a psychology-oriented RAG assistant for psychoeducational support. It answers from curated mental-health sources, keeps responses grounded in retrieved evidence, and applies safety checks for crisis, medication, and prompt-injection cases. The project is built for local development and capstone/jury review with FastAPI, React 19, SQLite, FAISS, and Ollama.
 
-Calma is not a therapist, psychologist, psychiatrist, doctor, diagnostic tool, treatment provider, medication advisor, emergency service, or replacement for professional care. In urgent or crisis situations, users should contact local emergency services or a qualified professional.
+## Features
+- Chat UI with session persistence and sidebar history.
+- Source-grounded responses from curated PDF knowledge.
+- Hybrid retrieval with FAISS and optional Qdrant support.
+- Optional graph-based retrieval for eligible queries.
+- Independent safety layer for crisis, self-harm, medication, and injection signals.
+- User context from profile, mood, journal, and conversation history.
+- Offline evaluation and jury benchmark tooling.
 
-## Stack
+## Architecture
+- Backend: `server/app/main.py` boots FastAPI, mounts API routers, and exposes health/readiness endpoints.
+- Chat flow: `server/app/api/chat/routes.py` loads user state, runs RAG augmentation, generates responses with `server/app/services/conversational_assistant.py`, applies safety checks, and persists sessions through `server/app/services/session_store.py`.
+- Retrieval: `server/app/core/retrieval/` contains the corpus loader, hybrid retriever, FAISS/Qdrant backends, reranking, and optional graph RAG.
+- Safety: `server/app/services/risk_detection.py` scans user and assistant text for crisis and medication signals, while the assistant also checks for prompt injection.
+- Frontend: `client/src/App.jsx` implements the React 19 + Vite UI, including chat, session list, and supporting profile/mood/journal screens.
+- Evaluation: `tests/jtest.py` is the primary jury benchmark; `server/app/evaluation/` contains offline evaluation runners and datasets.
 
-- Backend: FastAPI, SQLAlchemy async, SQLite
-- Frontend: React 19 + Vite
-- Retrieval: FAISS by default, Qdrant optional
-- LLM: Ollama, default model `mistral:latest`
-- Embeddings: `sentence-transformers` (`all-MiniLM-L6-v2`)
+## Project Structure
+- `server/app/main.py` FastAPI entrypoint and router wiring.
+- `server/app/api/` HTTP routes for chat, sessions, auth, feedback, journal, mood, profile, and screening.
+- `server/app/services/` conversation, RAG, safety, session, profile, mood, and journal services.
+- `server/app/core/retrieval/` corpus loading, retrieval backends, reranking, and graph store code.
+- `server/app/core/generation/` Ollama client and generation helpers.
+- `server/app/evaluation/` evaluation runners and benchmark datasets.
+- `client/src/` React UI, styling, assets, and API config.
+- `data/raw/` source PDFs used to build the knowledge base.
+- `data/indexes/` chunked index inputs used by offline index-building scripts.
+- `data/store/` runtime SQLite, FAISS, and session-memory artifacts.
+- `tests/` automated test suite and `tests/jtest.py` benchmark runner.
+- `benchmarks/` generated benchmark reports and latest jury outputs.
+- `build_faiss_indexes.py` and `refine_pdf_audit.py` offline data/index maintenance scripts.
+- `compose.yaml`, `compose.override.yaml`, `compose.frontend-standalone.yaml` Docker runtime definitions.
 
-## Prerequisites
-
-- Docker and Docker Compose, or
-- Python with `pip`
-- Node.js with `npm`
-- Ollama running locally for non-Docker development
-
-The repo does not pin a Python version, so use a modern Python 3 release that works with the pinned dependencies.
-
-## Quick Start
-
-The fastest path is Docker Compose:
-
-```bash
-docker compose up --build
-```
-
-This starts the backend, frontend, and Qdrant. The base compose file also exposes the backend on `8000` and the frontend on `8080`.
-
-Open:
-
-- Frontend: `http://localhost:8080`
-- Backend health: `http://localhost:8000/health`
-- Backend readiness: `http://localhost:8000/ready`
-- API docs: `http://localhost:8000/docs`
-
-## Local Development
+## Installation
+Requires Python 3, Node.js, and Ollama for local development.
 
 1. Install dependencies:
 
@@ -46,116 +45,56 @@ Open:
 make install
 ```
 
-2. Start Ollama and make sure `mistral:latest` is available.
+2. Start Ollama and make sure the configured model is available.
 
-3. Run the backend:
-
-```bash
-make run-server
-```
-
-4. Run the frontend in another terminal:
+3. For a containerized setup, run:
 
 ```bash
-make run-client
+make run-stack
 ```
-
-Local dev defaults:
-
-- Backend: `http://127.0.0.1:8000`
-- Frontend: `http://localhost:5173`
-
-`server/run.py` will use `.venv/bin/python` if it exists; otherwise it falls back to the current Python interpreter.
 
 ## Environment Variables
+Defaults are defined in `.env.example` and `compose.yaml`.
 
-Copy `.env.example` to `.env` if you want local overrides:
+- `APP_NAME`, `DEPLOYMENT_MODE`, `BACKEND_HOST`, `BACKEND_PORT`
+- `RETRIEVAL_BACKEND`, `QDRANT_URL`, `QDRANT_COLLECTION`
+- `ENABLE_GRAPH_RAG`, `GRAPH_RAG_MIN_CHUNKS`, `GRAPH_RAG_MIN_QUERY_TERMS`
+- `ENABLE_QDRANT_FALLBACK`, `ENABLE_OLLAMA_FALLBACK`
+- `ENABLE_RERANKER`, `RERANK_TOP_K`, `RERANK_MAX_CHARS`
+- `OLLAMA_BASE_URL`, `OLLAMA_MODEL`
+- `FRONTEND_ORIGINS`, `VITE_API_URL`, `FRONTEND_API_UPSTREAM`
+- `TOP_K`, `EVIDENCE_MIN_SCORE`, `EVIDENCE_MIN_CHUNKS`, `EMBEDDING_MODEL`
+- `MODEL_CONTRACT_VERSION`, `SENSITIVE_LOG_REDACTION_ENABLED`
+- `RAW_CHAT_RETENTION_DAYS`, `SESSION_SUMMARY_RETENTION_DAYS`, `SCREENING_RETENTION_DAYS`, `CONSENT_RETENTION_DAYS`, `AUDIT_LOG_RETENTION_DAYS`
 
-```bash
-cp .env.example .env
-```
+## Usage
+- Backend: `make run-server`
+- Frontend: `make run-client`
+- Full stack: `make run-stack`
+- Default dev stack: `make docker-dev`
+- Production-style compose stack: `make docker-prod`
+- Frontend only: `make docker-frontend-standalone`
+- Seed runtime store volume: `make docker-init-store`
 
-Important settings:
+## Testing & Benchmark
+- Unit tests: `make test-unit`
+- Integration tests: `make test-integration`
+- All backend tests: `make test`
+- Delivery check: `make verify`
+- Jury benchmark and evaluations: `make test-eval`
+- Frontend validation: `make frontend-check`
+- Compose validation: `make compose-check`
 
-- `APP_NAME=Calma`
-- `BACKEND_HOST=127.0.0.1`
-- `BACKEND_PORT=8000`
-- `RETRIEVAL_BACKEND=faiss`
-- `OLLAMA_BASE_URL=http://localhost:11434`
-- `OLLAMA_MODEL=mistral:latest`
-- `QDRANT_URL=http://localhost:6333`
-- `VITE_API_URL=/api`
+## Safety Boundaries
+- Calma does not diagnose conditions.
+- Calma does not prescribe, recommend, or adjust medication.
+- Crisis, self-harm, and severe risk signals are escalated to urgent human-support guidance.
+- Prompt-injection attempts are rejected.
+- Answers are grounded in retrieved sources when available.
 
-The full default list is in `.env.example` and `compose.yaml`.
-
-## Data Layout
-
-Expected repository data folders:
-
-- `data/raw` - source PDFs and seed knowledge base files
-- `data/processed` - processed corpus artifacts and manifests
-- `data/store` - runtime state such as the SQLite DB and FAISS index
-
-Docker Compose mounts these paths into the backend. Treat `data/store` as runtime state, not source data.
-
-Useful ingestion commands:
-
-```bash
-make ingest-pdfs
-make build-index
-```
-
-## Testing And Verification
-
-Run the main quality gates with:
-
-```bash
-make verify
-```
-
-Other useful commands:
-
-```bash
-make test
-make test-unit
-make test-integration
-make test-eval
-make frontend-check
-make compose-check
-```
-
-The evaluation harness writes its report under `tests/eval/`.
-
-## Docker Commands
-
-- `make run-stack` - full stack with Compose
-- `make docker-dev` - same default development stack
-- `make docker-prod` - base compose stack without the dev override
-- `make docker-frontend-standalone` - frontend only, against an external backend
-- `make docker-init-store` - seed the named runtime store volume
-
-`docker compose up` automatically applies `compose.override.yaml`, which enables bind mounts and reload-friendly development settings.
-
-## Troubleshooting
-
-- First startup can take a while while Ollama loads the model and the embedding model warms up.
-- If chat is slow on the first request, wait for backend startup to finish and re-try.
-- Make sure ports `8000`, `8080`, `5173`, `6333`, and `11434` are free when using local services.
-- If you change retrieval mode to Qdrant, confirm the Qdrant container or service is running.
-- If the frontend cannot reach the backend, check `VITE_API_URL` and `FRONTEND_API_UPSTREAM`.
-
-## Documentation
-
-Useful docs in this repo:
-
-- `docs/technical/PROJECT_OVERVIEW.md`
-- `docs/technical/ARCHITECTURE.md`
-- `docs/technical/TECH_STACK.md`
-- `docs/technical/GOVERNANCE_CONTRACT.md`
-- `docs/academic/TEST_RESULTS.md`
-
-## Notes
-
-- The assistant is intended for psychoeducational support, not diagnosis or medical advice.
-- It must not present itself as a clinician or therapy provider.
-- The default retrieval backend is FAISS. Qdrant is available if you want to switch later.
+## Limitations
+- Full behavior depends on a local Ollama server and the configured model.
+- Retrieval quality depends on the source PDFs and generated indices.
+- The system is not a replacement for clinicians, emergency services, or medical care.
+- Safety detection is conservative and may produce false positives.
+- When retrieval or LLM backends are unavailable, the system degrades rather than failing silently.

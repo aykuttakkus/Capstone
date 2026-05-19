@@ -1065,8 +1065,8 @@ button.history-item {
 }
 
 .avatar {
-  width: 40px;
-  height: 40px;
+  width: 56px;
+  height: 56px;
   border-radius: 999px;
   display: flex;
   align-items: center;
@@ -1081,7 +1081,18 @@ button.history-item {
 }
 
 .avatar-assistant {
-  background: linear-gradient(135deg, #10b981, #34d399);
+  background: #10b981;
+  border: none;
+  overflow: hidden;
+}
+
+.assistant-avatar-logo {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+  border-radius: 999px;
+  filter: none;
 }
 
 .message-content {

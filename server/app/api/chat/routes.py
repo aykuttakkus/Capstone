@@ -29,6 +29,7 @@ from server.app.services.escalation import EscalationService
 from server.app.core.retrieval.corpus import KnowledgeBase
 from server.app.core.retrieval.faiss_store import FaissIndexStore
 from server.app.models.schemas.chat import SourceReference
+from server.app.services.session_store import ensure_session, append_session_turn, build_session_title
 
 router = APIRouter(prefix="/chat", tags=["Therapeutic Interface"])
 
@@ -80,6 +81,11 @@ async def chat(
     Requires a valid JWT Bearer token.
     """
     try:
+        print(
+            f"[CHAT DEBUG] /chat request user_id={current_user.id} session_id={payload.session_id} "
+            f"history_len={len(payload.history or [])} message_len={len(payload.message or '')}"
+        )
+
         # Get service instances
         assistant = get_conversational_assistant()
         rag_service = get_rag_service()
@@ -90,12 +96,29 @@ async def chat(
         user_state = await user_state_service.load_full_state(db, current_user.id)
         intake_data = payload.intake if payload.intake else None
 
+        # Persist or resolve the chat session before generating a response so
+        # the sidebar can immediately show the conversation thread.
+        session = await ensure_session(
+            db,
+            current_user.id,
+            session_id=payload.session_id,
+            title=build_session_title(payload.message),
+            topic=None,
+            intake=payload.intake,
+            consent=payload.personalization,
+        )
+        await db.commit()
+
         # Retrieve knowledge
         rag_result = rag_service.augment_and_retrieve(
             user_message=payload.message,
             user_state=user_state,
             conversation_context=" ".join([h.get("content", "") for h in conversation_history[-3:]]),
             topic=None,
+        )
+        print(
+            f"[CHAT DEBUG] RAG retrieval success={rag_result.retrieval_success} "
+            f"chunk_count={rag_result.chunk_count} top_score={rag_result.top_score}"
         )
 
         # Build context for LLM
@@ -114,11 +137,19 @@ async def chat(
         llm_response = assistant.generate_response(context=context, temperature=0.7, is_first_message=is_first)
 
         response_text = llm_response.response_text
+        print(
+            f"[CHAT DEBUG] LLM response generated len={len(response_text or '')} "
+            f"first_message={is_first}"
+        )
 
         # Risk detection (post-generation)
         risk_assessment = risk_detector.assess_response(
             user_message=payload.message,
             ai_response=response_text,
+        )
+        print(
+            f"[CHAT DEBUG] Risk assessment level={risk_assessment.risk_level} "
+            f"should_escalate={risk_assessment.should_escalate} reason={risk_assessment.escalation_reason}"
         )
 
         # Check cumulative distress pattern
@@ -178,7 +209,7 @@ async def chat(
 
         # Build response
         chat_response = ChatResponse(
-            session_id=payload.session_id,
+            session_id=session.id,
             status="success",
             route="conversational_v3",
             intent="conversation",
@@ -201,12 +232,33 @@ async def chat(
             boundary_applied=False,
         )
 
+        # Persist conversation turn to make it appear in the left sidebar history.
+        await append_session_turn(
+            db,
+            session,
+            current_user.id,
+            query=payload.message,
+            response=response_text,
+            intent=chat_response.intent,
+            route=chat_response.route,
+            safety_mode=chat_response.safety_mode,
+            sources=[sr.model_dump() for sr in source_references],
+            intake=payload.intake,
+        )
+
+        await db.commit()
+
+        print(
+            f"[CHAT DEBUG] Response ready session_id={chat_response.session_id} "
+            f"escalation_required={escalation_required} sources={len(source_references)}"
+        )
+
         return chat_response
 
     except HTTPException:
         raise
     except Exception as e:
-        print(f"CRITICAL ERROR in Chat Flow: {str(e)}")
+        print(f"[CHAT DEBUG] CRITICAL ERROR in Chat Flow: {str(e)}")
         import traceback
         traceback.print_exc()
         raise HTTPException(
