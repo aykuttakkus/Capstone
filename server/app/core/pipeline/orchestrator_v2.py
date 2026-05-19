@@ -10,10 +10,11 @@ from server.app.core.agents.quality_critic import QualityCritic
 from server.app.core.agents.fallback_handler import FallbackHandler, FallbackMode
 from server.app.core.agents.orchestrator import Orchestrator
 from server.app.core.agents.response_planner import ResponsePlan
-from server.app.core.agents.safety_guardian import SafetyAnalysis
+from server.app.core.agents.safety_guardian import SafetyAnalysis, SafetyGuardian
 from server.app.core.pipeline.response_modes import ResponseMode, ResponseModeContext, ResponseModeSelector
 from server.app.core.pipeline.context_manager import ContextManager, ConversationContext
 from server.app.core.pipeline.intent_detector import IntentDetector
+from server.app.core.pipeline.risk_state import RiskState
 
 
 @dataclass(slots=True)
@@ -26,6 +27,7 @@ class PipelineContext:
     retrieved_content: str | None = None
     profile_context: dict[str, Any] | None = None
     screening_state: dict[str, Any] | None = None
+    risk_state: RiskState = field(default_factory=lambda: RiskState(current_risk_level="none"))
 
 
 @dataclass(slots=True)
@@ -48,12 +50,14 @@ class PipelineOrchestrator:
         dependency_critic: DependencyCritic,
         quality_critic: QualityCritic,
         fallback_handler: FallbackHandler,
+        safety_guardian: SafetyGuardian | None = None,
     ) -> None:
         self.orchestrator = orchestrator
         self.distress_monitor = distress_monitor
         self.dependency_critic = dependency_critic
         self.quality_critic = quality_critic
         self.fallback_handler = fallback_handler
+        self.safety_guardian = safety_guardian or SafetyGuardian()
         self.mode_selector = ResponseModeSelector()
         self.context_manager = ContextManager()
         self.intent_detector = IntentDetector()
@@ -67,7 +71,20 @@ class PipelineOrchestrator:
         start_time = time.time()
         warnings = []
 
-        # Step 1: Distress Analysis
+        # Step 1: Context Manager
+        # (Already in PipelineContext)
+
+        # Step 2: Safety Triage
+        safety_result = self.safety_guardian.analyze(context.user_message)
+        context.risk_state.update_risk_check(
+            self._map_safety_mode_to_risk_level(safety_result.mode),
+            safety_result.reasoning,
+        )
+        if safety_result.risk_level >= 4:
+            context.risk_state.activate_crisis_protocol()
+            warnings.append(f"Safety alert: {safety_result.reasoning}")
+
+        # Step 3: Subtle Distress Monitor
         distress_analysis = self.distress_monitor.analyze(
             context.user_message,
             context.conversation_history,
@@ -78,11 +95,22 @@ class PipelineOrchestrator:
         if distress_analysis.escalation_detected:
             warnings.append(f"Escalation detected: {distress_analysis.recommended_action}")
             context.risk_level = max(context.risk_level, distress_analysis.current_distress_level)
+            context.risk_state.cumulative_risk_signals.extend([s.category for s in distress_analysis.signals])
 
-        # Step 2: Route to appropriate mode
+        # Step 4: Intent Detection
+        # (Already done when PipelineContext is created with intent)
+
+        # Step 5: RAG Decision (currently always retrieve if available)
+        rag_decision = self._make_rag_decision(context)
+
+        # Step 6: Evidence Retrieval (handled by response generation)
+
+        # Step 7: Response Planner
+        # (Integrated in mode selection and generation)
+
+        # Step 8: Answer Generator + Step 9: Response Quality Critic
         response_mode = self._select_response_mode(distress_analysis, context)
 
-        # Step 3: Generate response
         if response_mode == ResponseMode.CRISIS:
             response = self._generate_crisis_response(context)
             quality_score = 1.0
@@ -91,16 +119,10 @@ class PipelineOrchestrator:
             quality_score = 0.8
         else:
             response = self._generate_response(
-                context, response_mode, llm_available, retrieval_available
+                context, response_mode, llm_available and rag_decision["use_rag"], retrieval_available
             )
 
-            # Step 4: Dependency Critique
-            dep_result = self.dependency_critic.critique(response, context.profile_context)
-            if not dep_result.is_safe:
-                warnings.append(f"Dependency concern: {dep_result.severity} - {dep_result.recommendation}")
-                response = self._revise_response(response, dep_result.recommendation)
-
-            # Step 5: Quality Critique
+            # Step 9: Response Quality Critic
             quality_result = self.quality_critic.critique(
                 response,
                 response_mode.value,
@@ -114,6 +136,26 @@ class PipelineOrchestrator:
                 warnings.extend(quality_result.concerns)
                 if quality_result.recommendations:
                     response = self._enhance_response(response, quality_result.recommendations[0])
+
+            # Step 10: Safety & Faithfulness Critic
+            safety_check = self.safety_guardian.analyze(response)
+            if safety_check.risk_level >= 3:
+                warnings.append(f"Safety check on response: {safety_check.reasoning}")
+                if safety_check.message:
+                    response = self._revise_response(response, safety_check.message)
+
+            # Step 11: Dependency & Boundary Critic
+            dep_result = self.dependency_critic.critique(response, context.profile_context)
+            if not dep_result.is_safe:
+                warnings.append(f"Dependency concern: {dep_result.severity} - {dep_result.recommendation}")
+                response = self._revise_response(response, dep_result.recommendation)
+
+        # Step 12: Fallback Handler (already integrated in _generate_response)
+
+        # Step 13: Final Response (PipelineResult)
+
+        # Step 14: Memory Update
+        self._update_memory(context, response, response_mode)
 
         execution_time = (time.time() - start_time) * 1000
 
@@ -211,6 +253,37 @@ class PipelineOrchestrator:
 
     def _count_violations(self, critic_result: Any) -> int:
         return len(critic_result.violations) if hasattr(critic_result, "violations") else 0
+
+    def _map_safety_mode_to_risk_level(self, mode: str) -> str:
+        """Map SafetyGuardian mode to RiskState level."""
+        mode_map = {
+            "crisis": "crisis",
+            "escalate": "high",
+            "monitor": "medium",
+            "normal": "none",
+        }
+        return mode_map.get(mode, "none")
+
+    def _make_rag_decision(self, context: PipelineContext) -> dict[str, Any]:
+        """Decide whether to use RAG based on context."""
+        # Currently always use RAG if available
+        # Future: add intelligent decision logic
+        return {
+            "use_rag": True,
+            "retrieve_amount": 3,
+            "reasoning": "Standard retrieval for response grounding",
+        }
+
+    def _update_memory(self, context: PipelineContext, response: str, mode: ResponseMode) -> None:
+        """Update conversation memory with this exchange."""
+        # Store in session memory/database
+        # This is a placeholder - actual implementation depends on memory backend
+        if hasattr(self.context_manager, "update_context"):
+            self.context_manager.update_context(
+                context.session_id if hasattr(context, "session_id") else "unknown",
+                response,
+                distress_level=context.risk_level,
+            )
 
     def get_pipeline_stats(self) -> dict[str, Any]:
         return {

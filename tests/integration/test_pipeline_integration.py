@@ -7,6 +7,7 @@ from server.app.core.agents.dependency_critic import DependencyCritic
 from server.app.core.agents.quality_critic import QualityCritic
 from server.app.core.agents.fallback_handler import FallbackHandler
 from server.app.core.agents.orchestrator import Orchestrator
+from server.app.core.agents.safety_guardian import SafetyGuardian
 from server.app.core.pipeline.orchestrator_v2 import (
     PipelineOrchestrator,
     PipelineContext,
@@ -15,6 +16,7 @@ from server.app.core.pipeline.orchestrator_v2 import (
 from server.app.core.pipeline.context_manager import ContextManager
 from server.app.core.pipeline.intent_detector import IntentDetector
 from server.app.core.pipeline.response_modes import ResponseMode
+from server.app.core.pipeline.risk_state import RiskState
 
 
 pytestmark = [pytest.mark.integration]
@@ -156,6 +158,7 @@ class TestPipelineOrchestrator:
             dependency_critic=DependencyCritic(),
             quality_critic=QualityCritic(),
             fallback_handler=FallbackHandler(),
+            safety_guardian=SafetyGuardian(),
         )
 
     @pytest.mark.anyio
@@ -297,6 +300,7 @@ class TestEndToEndPipeline:
             dependency_critic=DependencyCritic(),
             quality_critic=QualityCritic(),
             fallback_handler=FallbackHandler(),
+            safety_guardian=SafetyGuardian(),
         )
 
         # Turn 1: Emotional support

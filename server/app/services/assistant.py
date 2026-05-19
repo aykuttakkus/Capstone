@@ -30,7 +30,7 @@ from server.app.core.retrieval.reranker import EvidenceReranker
 from server.app.core.retrieval.retriever import ScoredChunk
 from server.app.core.agents.orchestrator import Orchestrator
 from server.app.core.agents.response_planner import ResponsePlan
-from server.app.core.agents.safety_guardian import SafetyAnalysis
+from server.app.core.agents.safety_guardian import SafetyAnalysis, SafetyGuardian
 from server.app.core.agents.memory_agent import MemoryAgent
 from server.app.core.agents.distress_monitor import SubtleDistressMonitor
 from server.app.core.agents.dependency_critic import DependencyCritic
@@ -39,6 +39,7 @@ from server.app.core.agents.fallback_handler import FallbackHandler
 from server.app.core.pipeline.orchestrator_v2 import PipelineOrchestrator, PipelineContext
 from server.app.core.pipeline.context_manager import ContextManager
 from server.app.core.pipeline.intent_detector import IntentDetector
+from server.app.core.pipeline.risk_state import RiskState
 from server.app.utils.audit_logger import ClinicalAuditLogger
 from server.app.models.sql.models import User, Memory, Conversation, ChatSession
 from server.app.services.journal import journal_service
@@ -76,14 +77,16 @@ class AssistantService:
         self.dependency_critic = DependencyCritic()
         self.quality_critic = QualityCritic()
         self.fallback_handler = FallbackHandler()
+        self.safety_guardian = SafetyGuardian()
 
-        # Phase 2: Pipeline orchestration
+        # Phase 2: Pipeline orchestration (14-step execution)
         self.pipeline_orchestrator = PipelineOrchestrator(
             orchestrator=self.orchestrator,
             distress_monitor=self.distress_monitor,
             dependency_critic=self.dependency_critic,
             quality_critic=self.quality_critic,
             fallback_handler=self.fallback_handler,
+            safety_guardian=self.safety_guardian,
         )
 
         # Phase 3: Context and Intent processing
