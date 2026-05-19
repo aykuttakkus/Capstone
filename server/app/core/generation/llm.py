@@ -18,12 +18,12 @@ class OllamaClient:
         self.base_url = base_url.rstrip("/")
         self.model = model
 
-    def generate(self, prompt: str, temperature: float = 0.2) -> LLMResult:
+    def generate(self, prompt: str, temperature: float = 0.2, num_predict: int = 280) -> LLMResult:
         payload = {
             "model": self.model,
             "prompt": prompt,
             "stream": False,
-            "options": {"temperature": temperature},
+            "options": {"temperature": temperature, "num_predict": num_predict},
         }
 
         req = request.Request(

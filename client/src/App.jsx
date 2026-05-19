@@ -1011,23 +1011,19 @@ function App() {
         },
       });
 
-      console.log('[CHAT DEBUG] chat response', {
-        sessionId: response.data?.session_id,
-        answerLength: response.data?.answer?.length ?? 0,
-        route: response.data?.route,
-        responseMode: response.data?.response_mode,
-        fallbackUsed: response.data?.fallback_used,
-      });
-
-      setMessages((prev) => [
-        ...prev,
-        {
+      setMessages((prev) => {
+        const newMessages = [];
+        if (response.data.disclaimer) {
+          newMessages.push({ role: 'disclaimer', content: response.data.disclaimer });
+        }
+        newMessages.push({
           role: 'assistant',
           content: response.data.answer,
           data: response.data,
           personalization: response.data.personalization_signals ?? [],
-        },
-      ]);
+        });
+        return [...prev, ...newMessages];
+      });
       setActiveSessionId(response.data.session_id ?? activeSessionId);
       activeSessionIdRef.current = response.data.session_id ?? activeSessionId;
       setNewSessionRequested(false);
@@ -1362,7 +1358,11 @@ function App() {
             {messages.length === 0 && (stage === 'chat' || isPreviewMode) && null}
 
             {messages.map((msg, idx) => (
-              msg.role === 'user' ? (
+              msg.role === 'disclaimer' ? (
+                <div key={idx} className="mx-auto my-2 max-w-lg rounded-xl border border-white/10 bg-white/5 px-4 py-3 text-center text-xs text-slate-400 leading-relaxed">
+                  {msg.content}
+                </div>
+              ) : msg.role === 'user' ? (
                 <div key={idx} className="message-row user">
                   <div className="message-content">
                     <div className="prose prose-invert max-w-none text-slate-200">{msg.content}</div>
