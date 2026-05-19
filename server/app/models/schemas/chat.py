@@ -73,3 +73,4 @@ class ChatResponse(BaseModel):
     fallback_used: bool = False
     boundary_applied: bool = False
     escalation_required: bool = False
+    disclaimer: str | None = None  # AI disclosure shown once at session start

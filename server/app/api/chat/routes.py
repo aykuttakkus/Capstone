@@ -185,6 +185,7 @@ async def chat(
             safety_mode=risk_assessment.risk_level.value,
             summary="Conversational response generated with full context awareness",
             answer=response_text,
+            disclaimer=llm_response.disclaimer,
             sources=source_references,
             context_used={
                 "history": len(conversation_history) > 0,
