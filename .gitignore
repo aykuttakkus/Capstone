@@ -15,6 +15,8 @@ client/dist/
 # Generated data
 data/processed/
 data/secure/
+data/raw/                         # All PDFs and raw data
+data/store/                       # FAISS indices, metadata, DBs
 data/raw/pdf_inventory_versions/
 data/raw/pdf_inventory*.json
 data/raw/pdf_inventory_history.json
