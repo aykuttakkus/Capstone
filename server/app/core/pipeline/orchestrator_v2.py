@@ -12,6 +12,8 @@ from server.app.core.agents.orchestrator import Orchestrator
 from server.app.core.agents.response_planner import ResponsePlan
 from server.app.core.agents.safety_guardian import SafetyAnalysis
 from server.app.core.pipeline.response_modes import ResponseMode, ResponseModeContext, ResponseModeSelector
+from server.app.core.pipeline.context_manager import ContextManager, ConversationContext
+from server.app.core.pipeline.intent_detector import IntentDetector
 
 
 @dataclass(slots=True)
@@ -53,6 +55,8 @@ class PipelineOrchestrator:
         self.quality_critic = quality_critic
         self.fallback_handler = fallback_handler
         self.mode_selector = ResponseModeSelector()
+        self.context_manager = ContextManager()
+        self.intent_detector = IntentDetector()
 
     async def execute(
         self,

@@ -37,6 +37,8 @@ from server.app.core.agents.dependency_critic import DependencyCritic
 from server.app.core.agents.quality_critic import QualityCritic
 from server.app.core.agents.fallback_handler import FallbackHandler
 from server.app.core.pipeline.orchestrator_v2 import PipelineOrchestrator, PipelineContext
+from server.app.core.pipeline.context_manager import ContextManager
+from server.app.core.pipeline.intent_detector import IntentDetector
 from server.app.utils.audit_logger import ClinicalAuditLogger
 from server.app.models.sql.models import User, Memory, Conversation, ChatSession
 from server.app.services.journal import journal_service
@@ -83,6 +85,10 @@ class AssistantService:
             quality_critic=self.quality_critic,
             fallback_handler=self.fallback_handler,
         )
+
+        # Phase 3: Context and Intent processing
+        self.context_manager = self.pipeline_orchestrator.context_manager
+        self.intent_detector = self.pipeline_orchestrator.intent_detector
 
     # ------------------------------------------------------------------
     # Persistence Helpers
