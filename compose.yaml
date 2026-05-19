@@ -11,6 +11,7 @@ services:
       DEPLOYMENT_MODE: ${DEPLOYMENT_MODE:-local}
       BACKEND_HOST: ${BACKEND_HOST:-0.0.0.0}
       BACKEND_PORT: ${BACKEND_PORT:-8000}
+      FAISS_INDEX_DIR: /app/data/faiss_indexes
       RETRIEVAL_BACKEND: ${RETRIEVAL_BACKEND:-faiss}
       ENABLE_GRAPH_RAG: ${ENABLE_GRAPH_RAG:-false}
       GRAPH_RAG_MIN_CHUNKS: ${GRAPH_RAG_MIN_CHUNKS:-400}
@@ -28,7 +29,7 @@ services:
       QDRANT_COLLECTION: ${QDRANT_COLLECTION:-calma_chunks}
       FRONTEND_ORIGINS: ${FRONTEND_ORIGINS:-http://localhost:5173,http://127.0.0.1:5173,http://localhost:8080,http://127.0.0.1:8080}
       OLLAMA_BASE_URL: ${OLLAMA_BASE_URL:-http://host.docker.internal:11434}
-      OLLAMA_MODEL: ${OLLAMA_MODEL:-mistral:latest}
+      OLLAMA_MODEL: ${OLLAMA_MODEL:-qwen2.5:14b}
       TOP_K: ${TOP_K:-5}
       EVIDENCE_MIN_SCORE: ${EVIDENCE_MIN_SCORE:-0.15}
       EVIDENCE_MIN_CHUNKS: ${EVIDENCE_MIN_CHUNKS:-1}
@@ -51,6 +52,10 @@ services:
       - type: bind
         source: ./data/processed
         target: /app/data/processed
+        read_only: true
+      - type: bind
+        source: ./data/faiss_indexes
+        target: /app/data/faiss_indexes
         read_only: true
     healthcheck:
       test: ["CMD-SHELL", "curl -fsS http://localhost:8000/health || exit 1"]

@@ -1,9 +1,13 @@
 from __future__ import annotations
 
-from fastapi import APIRouter, Depends, HTTPException, status, BackgroundTasks
+from fastapi import APIRouter, Depends, HTTPException, Request, status, BackgroundTasks
 from pydantic import BaseModel, Field
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
+from slowapi import Limiter
+from slowapi.util import get_remote_address
+
+limiter = Limiter(key_func=get_remote_address)
 
 from server.app.core.database import get_db
 from server.app.core.security import get_current_user
@@ -14,37 +18,197 @@ from server.app.services.assistant import get_service
 from server.app.core.agents.safety_guardian import SafetyGuardian
 from server.app.services.flows.intake_chat import intake_chat_engine
 from server.app.services.profile import profile_service
+from server.app.services.conversational_assistant import (
+    ConversationalAssistant,
+    ConversationContext,
+)
+from server.app.services.rag_augmentation import RAGAugmentationService
+from server.app.services.risk_detection import RiskDetectionService
+from server.app.services.user_state import user_state_service
+from server.app.services.escalation import EscalationService
+from server.app.core.retrieval.corpus import KnowledgeBase
+from server.app.core.retrieval.faiss_store import FaissIndexStore
+from server.app.models.schemas.chat import SourceReference
 
 router = APIRouter(prefix="/chat", tags=["Therapeutic Interface"])
 
+# Singleton instances for v3 services
+_conversational_assistant: ConversationalAssistant | None = None
+_rag_service: RAGAugmentationService | None = None
+_risk_detector: RiskDetectionService | None = None
+
+def get_conversational_assistant() -> ConversationalAssistant:
+    """Get or initialize ConversationalAssistant."""
+    global _conversational_assistant
+    if _conversational_assistant is None:
+        _conversational_assistant = ConversationalAssistant()
+    return _conversational_assistant
+
+def get_rag_service() -> RAGAugmentationService:
+    """Get or initialize RAGAugmentationService."""
+    global _rag_service
+    if _rag_service is None:
+        from server.app.core.config import FAISS_INDEX_PATH, FAISS_METADATA_PATH
+        kb = KnowledgeBase.load()
+        faiss_store = FaissIndexStore(FAISS_INDEX_PATH, FAISS_METADATA_PATH)
+        _rag_service = RAGAugmentationService(kb, faiss_store)
+    return _rag_service
+
+def get_risk_detector() -> RiskDetectionService:
+    """Get or initialize RiskDetectionService."""
+    global _risk_detector
+    if _risk_detector is None:
+        _risk_detector = RiskDetectionService()
+    return _risk_detector
+
+def get_escalation_service() -> EscalationService:
+    """Get or initialize EscalationService."""
+    return EscalationService()
+
 @router.post("/", response_model=ChatResponse)
+@limiter.limit("60/minute")
 async def chat(
+    request: Request,
     payload: ChatRequest,
     background_tasks: BackgroundTasks,
     current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db)
 ) -> ChatResponse:
     """
-    Primary Entry point for the Agentic RAG chat.
+    Primary Entry point for the Agentic RAG chat (v3 - Conversational AI).
+    Uses AI-first conversational system with RAG augmentation.
     Requires a valid JWT Bearer token.
     """
     try:
-        service = get_service()
-        response = await service.handle_message(
-            message=payload.message,
-            user=current_user,
-            db=db,
-            background_tasks=background_tasks,
-            session_id=payload.session_id,
-            new_session=payload.new_session,
-            intake=payload.intake,
-            screening=payload.screening,
-            history=payload.history,
-            personalization=payload.personalization,
+        # Get service instances
+        assistant = get_conversational_assistant()
+        rag_service = get_rag_service()
+        risk_detector = get_risk_detector()
+
+        # Build conversation context
+        conversation_history = payload.history or []
+        user_state = await user_state_service.load_full_state(db, current_user.id)
+        intake_data = payload.intake if payload.intake else None
+
+        # Retrieve knowledge
+        rag_result = rag_service.augment_and_retrieve(
+            user_message=payload.message,
+            user_state=user_state,
+            conversation_context=" ".join([h.get("content", "") for h in conversation_history[-3:]]),
+            topic=None,
         )
-        return response
+
+        # Build context for LLM
+        context = ConversationContext(
+            user_id=str(current_user.id),
+            session_id=str(payload.session_id or "new"),
+            current_message=payload.message,
+            conversation_history=conversation_history,
+            user_state=user_state,
+            intake_data=intake_data,
+            retrieved_knowledge=rag_result.formatted_knowledge,
+        )
+
+        # Generate response (LLM-down fallback handled inside generate_response — never raises 503)
+        is_first = len(conversation_history) == 0
+        llm_response = assistant.generate_response(context=context, temperature=0.7, is_first_message=is_first)
+
+        response_text = llm_response.response_text
+
+        # Risk detection (post-generation)
+        risk_assessment = risk_detector.assess_response(
+            user_message=payload.message,
+            ai_response=response_text,
+        )
+
+        # Check cumulative distress pattern
+        cumulative_distress = risk_detector.track_cumulative_distress(
+            conversation_history + [{"role": "user", "content": payload.message}]
+        )
+
+        escalation_required = risk_assessment.should_escalate or cumulative_distress.get("escalation_needed", False)
+
+        # Build escalation record
+        escalation_service = get_escalation_service()
+        escalation_record = None
+        escalation_message = ""
+
+        if escalation_required:
+            escalation_record = escalation_service.create_escalation_record(
+                user_id=current_user.id,
+                session_id=str(payload.session_id or "new"),
+                risk_level=risk_assessment.risk_level,
+                risk_indicators=risk_assessment.risk_indicators,
+                user_message=payload.message,
+                reason=risk_assessment.escalation_reason,
+            )
+
+            escalation_message = escalation_service.build_escalation_message(
+                risk_assessment.risk_level,
+                risk_assessment.escalation_reason,
+            )
+
+            if escalation_message:
+                response_text = escalation_service.append_escalation_to_response(response_text, escalation_message)
+
+            if escalation_record:
+                background_tasks.add_task(
+                    escalation_service.log_escalation,
+                    db,
+                    escalation_record,
+                )
+
+        # Format source references
+        source_references = []
+        if rag_result.retrieved_chunks:
+            for i, chunk in enumerate(rag_result.retrieved_chunks):
+                source_references.append(
+                    SourceReference(
+                        title=chunk.chunk.topic if chunk.chunk else "Unknown",
+                        source=chunk.chunk.source if chunk.chunk else "Unknown",
+                        topic=chunk.chunk.topic if chunk.chunk else "General",
+                        score=chunk.score,
+                        excerpt=chunk.chunk.content[:200] if chunk.chunk else "",
+                        rank=i + 1,
+                        source_kind=chunk.chunk.source_kind if chunk.chunk else None,
+                        language=chunk.chunk.language if chunk.chunk else None,
+                        confidence=chunk.chunk.confidence if chunk.chunk else None,
+                    )
+                )
+
+        # Build response
+        chat_response = ChatResponse(
+            session_id=payload.session_id,
+            status="success",
+            route="conversational_v3",
+            intent="conversation",
+            safety_mode=risk_assessment.risk_level.value,
+            summary="Conversational response generated with full context awareness",
+            answer=response_text,
+            sources=source_references,
+            context_used={
+                "history": len(conversation_history) > 0,
+                "profile": user_state is not None,
+                "knowledge": rag_result.retrieval_success and rag_result.chunk_count > 0,
+                "mood": user_state.recent_mood_score is not None if user_state else False,
+            },
+            pipeline_mode="conversational_v3",
+            response_mode="support",
+            risk_level=risk_assessment.risk_level.value,
+            retrieval_confidence=rag_result.top_score if rag_result.retrieval_success else 0.0,
+            fallback_used=False,
+            escalation_required=escalation_required,
+            boundary_applied=False,
+        )
+
+        return chat_response
+
+    except HTTPException:
+        raise
     except Exception as e:
         print(f"CRITICAL ERROR in Chat Flow: {str(e)}")
+        import traceback
+        traceback.print_exc()
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="An internal error occurred while processing your support request."

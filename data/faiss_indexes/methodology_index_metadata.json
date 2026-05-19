@@ -1,0 +1,16 @@
+{
+  "index_name": "methodology_index",
+  "chunk_count": 8,
+  "embedding_model": "intfloat/multilingual-e5-large",
+  "embedding_dim": 1024,
+  "chunk_ids": [
+    "Attachment_Research_0053",
+    "Attachment_Research_0054",
+    "Avoidant_Attachment_0552",
+    "Avoidant_Attachment_0553",
+    "Psych_Disorders_Textbook_0109",
+    "Psych_Disorders_Textbook_0110",
+    "Psych_Disorders_Textbook_0258",
+    "Psych_Disorders_Textbook_0288"
+  ]
+}

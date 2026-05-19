@@ -1,688 +1,860 @@
 {
-  "registry_version": "1.0",
+  "version": "2.0",
   "created": "2026-05-19",
-  "last_updated": "2026-05-19",
-  "total_approved_sources": 34,
-  "sources": [
-    {
-      "source_id": "who_doing_what_matters_2020",
-      "title": "Doing What Matters in Times of Stress",
-      "filename": "9789240003910-eng.pdf",
-      "organization": "WHO",
-      "year": 2020,
-      "source_type": "global_public_health_guide",
-      "topics": ["stress", "grounding", "coping", "values"],
-      "allowed_indexes": ["psychoeducation_index", "coping_skills_index"],
-      "allowed_use": ["psychoeducation", "coping_strategy", "emotional_support"],
-      "not_allowed": ["diagnosis", "medication_advice", "therapy_plan"],
-      "evidence_level": "global_public_health",
-      "clinical_risk": "none",
-      "language": "en",
-      "review_status": "approved",
-      "approval_date": "2026-05-19",
-      "last_reviewed": "2026-05-19",
-      "next_review": "2027-05-19"
-    },
-    {
-      "source_id": "who_psychosis_guide_2024",
-      "title": "Understanding Psychosis",
-      "filename": "23-MH-8110-Understanding-Psychosis.pdf",
-      "organization": "WHO",
-      "year": 2023,
-      "source_type": "clinical_guide",
-      "topics": ["psychosis", "mental_health"],
-      "allowed_indexes": ["psychoeducation_index"],
-      "allowed_use": ["psychoeducation"],
-      "not_allowed": ["diagnosis", "medication_advice", "therapy_plan"],
-      "evidence_level": "global_public_health",
-      "clinical_risk": "none",
-      "language": "en",
-      "review_status": "approved",
-      "approval_date": "2026-05-19",
-      "last_reviewed": "2026-05-19",
-      "next_review": "2027-05-19"
-    },
-    {
-      "source_id": "body_image_psychoed_001",
-      "title": "Body Image - How We Think and Feel About Our Bodies",
-      "filename": "Body Image - How we think and feel about our bodies.pdf",
-      "organization": "NHS",
-      "year": 2022,
-      "source_type": "psychoeducation_guide",
-      "topics": ["self_esteem", "body_image"],
-      "allowed_indexes": ["psychoeducation_index", "coping_skills_index"],
-      "allowed_use": ["psychoeducation", "coping_strategy", "emotional_support"],
-      "not_allowed": ["diagnosis", "medication_advice"],
-      "evidence_level": "clinical_self_help",
-      "clinical_risk": "none",
-      "language": "en",
-      "review_status": "approved",
-      "approval_date": "2026-05-19",
-      "last_reviewed": "2026-05-19",
-      "next_review": "2027-05-19"
-    },
-    {
-      "source_id": "anxiety_sensitivity_catastrophizing_001",
-      "title": "Anxiety Sensitivity and Catastrophizing",
-      "filename": "Anxiety_Sensitivity_and_Catastrophizing.pdf",
-      "organization": "Peer-Reviewed",
-      "year": 2021,
-      "source_type": "research_paper",
-      "topics": ["anxiety", "cognitive_distortions"],
-      "allowed_indexes": ["psychoeducation_index"],
-      "allowed_use": ["psychoeducation", "symptom_exploration"],
-      "not_allowed": ["diagnosis", "medication_advice", "therapy_plan"],
-      "evidence_level": "peer_reviewed",
-      "clinical_risk": "none",
-      "language": "en",
-      "review_status": "approved",
-      "approval_date": "2026-05-19",
-      "last_reviewed": "2026-05-19",
-      "next_review": "2027-05-19"
-    },
-    {
-      "source_id": "social_confidence_guide_001",
-      "title": "12 Shortcuts to Social Confidence",
-      "filename": "12-Shortcuts-to-Social-Confidence.pdf",
-      "organization": "Clinical Self-Help",
-      "year": 2020,
-      "source_type": "self_help_guide",
-      "topics": ["social_anxiety", "self_esteem", "loneliness"],
-      "allowed_indexes": ["coping_skills_index", "psychoeducation_index"],
-      "allowed_use": ["coping_strategy", "psychoeducation", "emotional_support"],
-      "not_allowed": ["diagnosis", "medication_advice"],
-      "evidence_level": "clinical_self_help",
-      "clinical_risk": "none",
-      "language": "en",
-      "review_status": "approved",
-      "approval_date": "2026-05-19",
-      "last_reviewed": "2026-05-19",
-      "next_review": "2027-05-19"
-    },
-    {
-      "source_id": "attachment_dissolution_001",
-      "title": "Attachment Style and Dissolution of Romantic Relationships",
-      "filename": "Attachment Style and Dissolution of Romantic Relationships.pdf",
-      "organization": "Peer-Reviewed",
-      "year": 2022,
-      "source_type": "research_paper",
-      "topics": ["relationships", "attachment", "grief_loss"],
-      "allowed_indexes": ["psychoeducation_index"],
-      "allowed_use": ["psychoeducation", "symptom_exploration", "emotional_support"],
-      "not_allowed": ["diagnosis", "medication_advice", "relationship_advice"],
-      "evidence_level": "peer_reviewed",
-      "clinical_risk": "none",
-      "language": "en",
-      "review_status": "approved",
-      "approval_date": "2026-05-19",
-      "last_reviewed": "2026-05-19",
-      "next_review": "2027-05-19"
-    },
-    {
-      "source_id": "avoidant_attachment_001",
-      "title": "Avoiding More Than Intimacy - Avoidant Attachment",
-      "filename": "Avoiding more than Intimacy_ Avoidant Attachment and the Avoidanc.pdf",
-      "organization": "Peer-Reviewed",
-      "year": 2021,
-      "source_type": "research_paper",
-      "topics": ["relationships", "attachment"],
-      "allowed_indexes": ["psychoeducation_index"],
-      "allowed_use": ["psychoeducation", "symptom_exploration"],
-      "not_allowed": ["diagnosis", "medication_advice"],
-      "evidence_level": "peer_reviewed",
-      "clinical_risk": "none",
-      "language": "en",
-      "review_status": "approved",
-      "approval_date": "2026-05-19",
-      "last_reviewed": "2026-05-19",
-      "next_review": "2027-05-19"
-    },
-    {
-      "source_id": "social_judgment_fear_001",
-      "title": "Breaking the Chains: Fear of Social Judgement",
-      "filename": "Breaking_The_Chains_Fear_of_Social_Judgement_and_I.pdf",
-      "organization": "Clinical Self-Help",
-      "year": 2023,
-      "source_type": "self_help_guide",
-      "topics": ["social_anxiety", "self_esteem"],
-      "allowed_indexes": ["psychoeducation_index", "coping_skills_index"],
-      "allowed_use": ["psychoeducation", "coping_strategy", "emotional_support"],
-      "not_allowed": ["diagnosis", "medication_advice"],
-      "evidence_level": "clinical_self_help",
-      "clinical_risk": "none",
-      "language": "en",
-      "review_status": "approved",
-      "approval_date": "2026-05-19",
-      "last_reviewed": "2026-05-19",
-      "next_review": "2027-05-19"
-    },
-    {
-      "source_id": "samhsa_safe_t_001",
-      "title": "SAMHSA SAFE-T Suicide Assessment Five-Step Evaluation",
-      "filename": "SAFE_T_Pocket_Card.pdf",
-      "organization": "SAMHSA",
-      "year": 2019,
-      "source_type": "crisis_protocol",
-      "topics": ["crisis", "suicide_prevention"],
-      "allowed_indexes": ["safety_crisis_index"],
-      "allowed_use": ["crisis_support"],
-      "not_allowed": ["psychoeducation", "coping_strategy", "emotional_support"],
-      "evidence_level": "clinical_guideline",
-      "clinical_risk": "crisis",
-      "language": "en",
-      "review_status": "approved",
-      "approval_date": "2026-05-19",
-      "last_reviewed": "2026-05-19",
-      "next_review": "2027-05-19"
-    },
-    {
-      "source_id": "cbt_thinking_errors_001",
-      "title": "Thinking Errors - CBT Cognitive Distortions Guide",
-      "filename": "Thinking Errors.pdf",
-      "organization": "NHS",
-      "year": 2022,
-      "source_type": "cbt_guide",
-      "topics": ["anxiety", "depression", "cognitive_distortions"],
-      "allowed_indexes": ["psychoeducation_index", "coping_skills_index"],
-      "allowed_use": ["psychoeducation", "coping_strategy"],
-      "not_allowed": ["diagnosis", "medication_advice", "therapy_plan"],
-      "evidence_level": "clinical_self_help",
-      "clinical_risk": "none",
-      "language": "en",
-      "review_status": "approved",
-      "approval_date": "2026-05-19",
-      "last_reviewed": "2026-05-19",
-      "next_review": "2027-05-19"
-    },
-    {
-      "source_id": "affect_regulation_001",
-      "title": "Affect and Affect Regulation Strategies",
-      "filename": "ART_2015_Pavanietal_Affect-and-Affect-Regulation-Strategies-2015.pdf",
-      "organization": "Peer-Reviewed",
-      "year": 2015,
-      "source_type": "research_paper",
-      "topics": ["emotion_regulation", "stress"],
-      "allowed_indexes": ["psychoeducation_index"],
-      "allowed_use": ["psychoeducation", "coping_strategy"],
-      "not_allowed": ["diagnosis", "medication_advice"],
-      "evidence_level": "peer_reviewed",
-      "clinical_risk": "none",
-      "language": "en",
-      "review_status": "approved",
-      "approval_date": "2026-05-19",
-      "last_reviewed": "2026-05-19",
-      "next_review": "2027-05-19"
-    },
-    {
-      "source_id": "peer_relationships_social_appearance_001",
-      "title": "The Relationship Between Peer Relationships and Social Appearance",
-      "filename": "1The Relationship Between Peer Relationships and Social Appearance.pdf",
-      "organization": "Peer-Reviewed",
-      "year": 2023,
-      "source_type": "research_paper",
-      "topics": ["social_anxiety", "self_esteem", "loneliness"],
-      "allowed_indexes": ["psychoeducation_index"],
-      "allowed_use": ["psychoeducation", "symptom_exploration"],
-      "not_allowed": ["diagnosis", "medication_advice"],
-      "evidence_level": "peer_reviewed",
-      "clinical_risk": "none",
-      "language": "en",
-      "review_status": "approved",
-      "approval_date": "2026-05-19",
-      "last_reviewed": "2026-05-19",
-      "next_review": "2027-05-19"
-    },
-    {
-      "source_id": "mind_reading_001",
-      "title": "Mind Reading - Cognitive Bias in Social Situations",
-      "filename": "1907mindreading.pdf",
-      "organization": "Peer-Reviewed",
-      "year": 2019,
-      "source_type": "research_paper",
-      "topics": ["social_anxiety", "cognitive_distortions", "anxiety"],
-      "allowed_indexes": ["psychoeducation_index"],
-      "allowed_use": ["psychoeducation", "symptom_exploration"],
-      "not_allowed": ["diagnosis", "medication_advice"],
-      "evidence_level": "peer_reviewed",
-      "clinical_risk": "none",
-      "language": "en",
-      "review_status": "approved",
-      "approval_date": "2026-05-19",
-      "last_reviewed": "2026-05-19",
-      "next_review": "2027-05-19"
-    },
-    {
-      "source_id": "identity_dissolution_001",
-      "title": "Affect and Self in Dissolution of Romantic Relationships",
-      "filename": "57_SlotterGardnerFinkelInPress_PSPB.pdf",
-      "organization": "Peer-Reviewed",
-      "year": 2022,
-      "source_type": "research_paper",
-      "topics": ["relationships", "grief_loss", "self_esteem"],
-      "allowed_indexes": ["psychoeducation_index"],
-      "allowed_use": ["psychoeducation", "emotional_support"],
-      "not_allowed": ["diagnosis", "medication_advice"],
-      "evidence_level": "peer_reviewed",
-      "clinical_risk": "none",
-      "language": "en",
-      "review_status": "approved",
-      "approval_date": "2026-05-19",
-      "last_reviewed": "2026-05-19",
-      "next_review": "2027-05-19"
-    },
-    {
-      "source_id": "turkish_research_anxiety_001",
-      "title": "Turkish Psychological Research - Anxiety",
-      "filename": "10.18863-pgy.360041-680335.pdf",
-      "organization": "Turkish Academic Journal",
-      "year": 2023,
-      "source_type": "research_paper",
-      "topics": ["anxiety", "stress"],
-      "allowed_indexes": ["psychoeducation_index"],
-      "allowed_use": ["psychoeducation", "symptom_exploration"],
-      "not_allowed": ["diagnosis", "medication_advice"],
-      "evidence_level": "peer_reviewed",
-      "clinical_risk": "none",
-      "language": "tr",
-      "review_status": "approved",
-      "approval_date": "2026-05-19",
-      "last_reviewed": "2026-05-19",
-      "next_review": "2027-05-19"
-    },
-    {
-      "source_id": "turkish_research_depression_001",
-      "title": "Turkish Psychological Research - Depression",
-      "filename": "10.26650-SP2023-1750843-5090373.pdf",
-      "organization": "Turkish Academic Journal",
-      "year": 2023,
-      "source_type": "research_paper",
-      "topics": ["depression", "low_mood"],
-      "allowed_indexes": ["psychoeducation_index"],
-      "allowed_use": ["psychoeducation", "symptom_exploration"],
-      "not_allowed": ["diagnosis", "medication_advice"],
-      "evidence_level": "peer_reviewed",
-      "clinical_risk": "none",
-      "language": "tr",
-      "review_status": "approved",
-      "approval_date": "2026-05-19",
-      "last_reviewed": "2026-05-19",
-      "next_review": "2027-05-19"
-    },
-    {
-      "source_id": "turkish_social_anxiety_001",
-      "title": "Turkish Psychological Research - Social Anxiety",
-      "filename": "10.54186-arhuss.1741986-5053505.pdf",
-      "organization": "Turkish Academic Journal",
-      "year": 2024,
-      "source_type": "research_paper",
-      "topics": ["social_anxiety", "loneliness"],
-      "allowed_indexes": ["psychoeducation_index"],
-      "allowed_use": ["psychoeducation", "symptom_exploration"],
-      "not_allowed": ["diagnosis", "medication_advice"],
-      "evidence_level": "peer_reviewed",
-      "clinical_risk": "none",
-      "language": "tr",
-      "review_status": "approved",
-      "approval_date": "2026-05-19",
-      "last_reviewed": "2026-05-19",
-      "next_review": "2027-05-19"
-    },
-    {
-      "source_id": "turkish_academic_001",
-      "title": "Turkish Academic Research - Mental Health",
-      "filename": "10.54535-rep.1762634-5143320.pdf",
-      "organization": "Turkish Academic Journal",
-      "year": 2024,
-      "source_type": "research_paper",
-      "topics": ["stress", "anxiety"],
-      "allowed_indexes": ["psychoeducation_index"],
-      "allowed_use": ["psychoeducation", "symptom_exploration"],
-      "not_allowed": ["diagnosis", "medication_advice"],
-      "evidence_level": "peer_reviewed",
-      "clinical_risk": "none",
-      "language": "tr",
-      "review_status": "approved",
-      "approval_date": "2026-05-19",
-      "last_reviewed": "2026-05-19",
-      "next_review": "2027-05-19"
-    },
-    {
-      "source_id": "turkish_academic_002",
-      "title": "Turkish Academic Research - Coping Strategies",
-      "filename": "10.54535-rep.1837643-5485773.pdf",
-      "organization": "Turkish Academic Journal",
-      "year": 2024,
-      "source_type": "research_paper",
-      "topics": ["coping", "stress"],
-      "allowed_indexes": ["psychoeducation_index", "coping_skills_index"],
-      "allowed_use": ["psychoeducation", "coping_strategy"],
-      "not_allowed": ["diagnosis", "medication_advice"],
-      "evidence_level": "peer_reviewed",
-      "clinical_risk": "none",
-      "language": "tr",
-      "review_status": "approved",
-      "approval_date": "2026-05-19",
-      "last_reviewed": "2026-05-19",
-      "next_review": "2027-05-19"
-    },
-    {
-      "source_id": "turkish_academic_003",
-      "title": "Turkish Academic Research - Emotional Regulation",
-      "filename": "10.54535-rep.1837781-5486464.pdf",
-      "organization": "Turkish Academic Journal",
-      "year": 2024,
-      "source_type": "research_paper",
-      "topics": ["emotion_regulation", "anxiety"],
-      "allowed_indexes": ["psychoeducation_index"],
-      "allowed_use": ["psychoeducation", "coping_strategy"],
-      "not_allowed": ["diagnosis", "medication_advice"],
-      "evidence_level": "peer_reviewed",
-      "clinical_risk": "none",
-      "language": "tr",
-      "review_status": "approved",
-      "approval_date": "2026-05-19",
-      "last_reviewed": "2026-05-19",
-      "next_review": "2027-05-19"
-    },
-    {
-      "source_id": "turkish_academic_004",
-      "title": "Turkish Academic Research - Self Esteem",
-      "filename": "10.54535-rep.1845582-5522708.pdf",
-      "organization": "Turkish Academic Journal",
-      "year": 2024,
-      "source_type": "research_paper",
-      "topics": ["self_esteem", "depression"],
-      "allowed_indexes": ["psychoeducation_index"],
-      "allowed_use": ["psychoeducation", "emotional_support"],
-      "not_allowed": ["diagnosis", "medication_advice"],
-      "evidence_level": "peer_reviewed",
-      "clinical_risk": "none",
-      "language": "tr",
-      "review_status": "approved",
-      "approval_date": "2026-05-19",
-      "last_reviewed": "2026-05-19",
-      "next_review": "2027-05-19"
-    },
-    {
-      "source_id": "turkish_academic_005",
-      "title": "Turkish Academic Research - Burnout",
-      "filename": "10.54535-rep.1854692-5563520.pdf",
-      "organization": "Turkish Academic Journal",
-      "year": 2024,
-      "source_type": "research_paper",
-      "topics": ["burnout_sleep", "stress"],
-      "allowed_indexes": ["psychoeducation_index"],
-      "allowed_use": ["psychoeducation", "symptom_exploration"],
-      "not_allowed": ["diagnosis", "medication_advice"],
-      "evidence_level": "peer_reviewed",
-      "clinical_risk": "none",
-      "language": "tr",
-      "review_status": "approved",
-      "approval_date": "2026-05-19",
-      "last_reviewed": "2026-05-19",
-      "next_review": "2027-05-19"
-    },
-    {
-      "source_id": "turkish_academic_006",
-      "title": "Turkish Academic Research - Loneliness",
-      "filename": "10.54535-rep.1878366-5668688.pdf",
-      "organization": "Turkish Academic Journal",
-      "year": 2024,
-      "source_type": "research_paper",
-      "topics": ["loneliness", "social_anxiety"],
-      "allowed_indexes": ["psychoeducation_index"],
-      "allowed_use": ["psychoeducation", "emotional_support"],
-      "not_allowed": ["diagnosis", "medication_advice"],
-      "evidence_level": "peer_reviewed",
-      "clinical_risk": "none",
-      "language": "tr",
-      "review_status": "approved",
-      "approval_date": "2026-05-19",
-      "last_reviewed": "2026-05-19",
-      "next_review": "2027-05-19"
-    },
-    {
-      "source_id": "acharya_mental_health_001",
-      "title": "Acharya - Mental Health Research",
-      "filename": "Acharya_12.2.pdf",
-      "organization": "Academic",
-      "year": 2022,
-      "source_type": "research_paper",
-      "topics": ["mental_health", "anxiety", "depression"],
-      "allowed_indexes": ["psychoeducation_index"],
-      "allowed_use": ["psychoeducation", "symptom_exploration"],
-      "not_allowed": ["diagnosis", "medication_advice"],
-      "evidence_level": "peer_reviewed",
-      "clinical_risk": "none",
-      "language": "en",
-      "review_status": "approved",
-      "approval_date": "2026-05-19",
-      "last_reviewed": "2026-05-19",
-      "next_review": "2027-05-19"
-    },
-    {
-      "source_id": "art_mental_health_001",
-      "title": "ART 2019 Mental Health Research",
-      "filename": "ART2019817.pdf",
-      "organization": "Academic",
-      "year": 2019,
-      "source_type": "research_paper",
-      "topics": ["mental_health", "stress"],
-      "allowed_indexes": ["psychoeducation_index"],
-      "allowed_use": ["psychoeducation"],
-      "not_allowed": ["diagnosis", "medication_advice"],
-      "evidence_level": "peer_reviewed",
-      "clinical_risk": "none",
-      "language": "en",
-      "review_status": "approved",
-      "approval_date": "2026-05-19",
-      "last_reviewed": "2026-05-19",
-      "next_review": "2027-05-19"
-    },
-    {
-      "source_id": "methodology_rag_001",
-      "title": "RAG Methodology for Mental Health AI",
-      "filename": "7067-ArticleText-13923-1-10-20240630.pdf",
-      "organization": "Academic",
-      "year": 2024,
-      "source_type": "methodology",
-      "topics": ["methodology", "AI_safety"],
-      "allowed_indexes": ["methodology_index"],
-      "allowed_use": ["methodology"],
-      "not_allowed": ["diagnosis", "medication_advice", "psychoeducation", "coping_strategy"],
-      "evidence_level": "peer_reviewed",
-      "clinical_risk": "none",
-      "language": "en",
-      "review_status": "approved",
-      "approval_date": "2026-05-19",
-      "last_reviewed": "2026-05-19",
-      "next_review": "2027-05-19"
-    },
-    {
-      "source_id": "methodology_nlp_001",
-      "title": "NLP in Mental Health Systems",
-      "filename": "76657.pdf",
-      "organization": "Academic",
-      "year": 2023,
-      "source_type": "methodology",
-      "topics": ["methodology", "NLP", "mental_health_AI"],
-      "allowed_indexes": ["methodology_index"],
-      "allowed_use": ["methodology"],
-      "not_allowed": ["diagnosis", "medication_advice", "psychoeducation"],
-      "evidence_level": "peer_reviewed",
-      "clinical_risk": "none",
-      "language": "en",
-      "review_status": "approved",
-      "approval_date": "2026-05-19",
-      "last_reviewed": "2026-05-19",
-      "next_review": "2027-05-19"
-    },
-    {
-      "source_id": "methodology_ai_safety_001",
-      "title": "AI Safety in Psychological Support Systems",
-      "filename": "91-1170-1-PB.pdf",
-      "organization": "Academic",
-      "year": 2024,
-      "source_type": "methodology",
-      "topics": ["methodology", "AI_safety"],
-      "allowed_indexes": ["methodology_index"],
-      "allowed_use": ["methodology"],
-      "not_allowed": ["diagnosis", "medication_advice", "psychoeducation"],
-      "evidence_level": "peer_reviewed",
-      "clinical_risk": "none",
-      "language": "en",
-      "review_status": "approved",
-      "approval_date": "2026-05-19",
-      "last_reviewed": "2026-05-19",
-      "next_review": "2027-05-19"
-    },
-    {
-      "source_id": "methodology_chatbot_001",
-      "title": "Chatbot Systems in Mental Health - Evaluation Framework",
-      "filename": "97044008009.pdf",
-      "organization": "Academic",
-      "year": 2024,
-      "source_type": "methodology",
-      "topics": ["methodology", "evaluation", "mental_health_AI"],
-      "allowed_indexes": ["methodology_index"],
-      "allowed_use": ["methodology"],
-      "not_allowed": ["diagnosis", "medication_advice", "psychoeducation"],
-      "evidence_level": "peer_reviewed",
-      "clinical_risk": "none",
-      "language": "en",
-      "review_status": "approved",
-      "approval_date": "2026-05-19",
-      "last_reviewed": "2026-05-19",
-      "next_review": "2027-05-19"
-    },
-    {
-      "source_id": "turkish_academic_schoka_001",
-      "title": "Turkish Research - Psychological Wellbeing",
-      "filename": "1002672446-schoka.pdf",
-      "organization": "Turkish Academic",
-      "year": 2023,
-      "source_type": "research_paper",
-      "topics": ["mental_health", "wellbeing"],
-      "allowed_indexes": ["psychoeducation_index"],
-      "allowed_use": ["psychoeducation", "emotional_support"],
-      "not_allowed": ["diagnosis", "medication_advice"],
-      "evidence_level": "peer_reviewed",
-      "clinical_risk": "none",
-      "language": "tr",
-      "review_status": "approved",
-      "approval_date": "2026-05-19",
-      "last_reviewed": "2026-05-19",
-      "next_review": "2027-05-19"
-    },
-    {
-      "source_id": "turkish_academic_rep_001",
-      "title": "Turkish Research - Emotion Regulation Strategies",
-      "filename": "10.54535-rep.1762634-5143320.pdf",
-      "organization": "Turkish Academic Journal",
-      "year": 2024,
-      "source_type": "research_paper",
-      "topics": ["emotion_regulation", "coping"],
-      "allowed_indexes": ["psychoeducation_index", "coping_skills_index"],
-      "allowed_use": ["psychoeducation", "coping_strategy"],
-      "not_allowed": ["diagnosis", "medication_advice"],
-      "evidence_level": "peer_reviewed",
-      "clinical_risk": "none",
-      "language": "tr",
-      "review_status": "approved",
-      "approval_date": "2026-05-19",
-      "last_reviewed": "2026-05-19",
-      "next_review": "2027-05-19"
-    },
-    {
-      "source_id": "sleep_mental_health_001",
-      "title": "Sleep and Mental Health - Research Overview",
-      "filename": "ABUIABA9GAAgpLuMvQYol634mgQ.pdf",
-      "organization": "Academic",
-      "year": 2022,
-      "source_type": "research_paper",
-      "topics": ["burnout_sleep", "stress", "mental_health"],
-      "allowed_indexes": ["psychoeducation_index", "coping_skills_index"],
-      "allowed_use": ["psychoeducation", "coping_strategy", "symptom_exploration"],
-      "not_allowed": ["diagnosis", "medication_advice"],
-      "evidence_level": "peer_reviewed",
-      "clinical_risk": "none",
-      "language": "en",
-      "review_status": "approved",
-      "approval_date": "2026-05-19",
-      "last_reviewed": "2026-05-19",
-      "next_review": "2027-05-19"
-    },
-    {
-      "source_id": "rumination_self_focus_001",
-      "title": "Rumination and Self-Focused Processing",
-      "filename": "35b513a8-79ac-4630-b144-0b2feb429e24.pdf",
-      "organization": "Academic",
-      "year": 2021,
-      "source_type": "research_paper",
-      "topics": ["rumination", "depression", "anxiety"],
-      "allowed_indexes": ["psychoeducation_index"],
-      "allowed_use": ["psychoeducation", "symptom_exploration"],
-      "not_allowed": ["diagnosis", "medication_advice"],
-      "evidence_level": "peer_reviewed",
-      "clinical_risk": "none",
-      "language": "en",
-      "review_status": "approved",
-      "approval_date": "2026-05-19",
-      "last_reviewed": "2026-05-19",
-      "next_review": "2027-05-19"
-    },
-    {
-      "source_id": "depression_research_001",
-      "title": "Depression - Current Research and Self-Help Approaches",
-      "filename": "ART_2015_Pavanietal_Affect-and-Affect-Regulation-Strategies-2015.pdf",
-      "organization": "Peer-Reviewed",
-      "year": 2015,
-      "source_type": "research_paper",
-      "topics": ["depression", "low_mood", "emotion_regulation"],
-      "allowed_indexes": ["psychoeducation_index", "coping_skills_index"],
-      "allowed_use": ["psychoeducation", "coping_strategy"],
-      "not_allowed": ["diagnosis", "medication_advice"],
-      "evidence_level": "peer_reviewed",
-      "clinical_risk": "none",
-      "language": "en",
-      "review_status": "approved",
-      "approval_date": "2026-05-19",
-      "last_reviewed": "2026-05-19",
-      "next_review": "2027-05-19"
-    }
-  ],
-  "index_definitions": {
-    "psychoeducation_index": {
-      "purpose": "Factual information, definitions, mechanisms, psychoeducation",
-      "allowed_intents": ["psychoeducation", "symptom_exploration", "emotional_support"],
-      "max_risk_level": "medium",
-      "requires_safety_filter": false
-    },
-    "coping_skills_index": {
-      "purpose": "Practical coping techniques and exercises",
-      "allowed_intents": ["coping_strategy", "psychoeducation"],
-      "max_risk_level": "medium",
-      "requires_safety_filter": false
-    },
-    "safety_crisis_index": {
-      "purpose": "Crisis response, suicide prevention, safety planning — RESTRICTED",
-      "allowed_intents": ["crisis_support"],
-      "max_risk_level": "crisis",
-      "requires_safety_filter": true,
-      "access": "RESTRICTED - only when risk_level >= high"
-    },
-    "methodology_index": {
-      "purpose": "RAG methodology, AI safety, evaluation frameworks for thesis",
-      "allowed_intents": ["methodology"],
-      "max_risk_level": "none",
-      "requires_safety_filter": false,
-      "access": "Academic/thesis use only"
-    }
-  },
-  "validation_rules": {
+  "approval_policy": {
     "require_registry_approval": true,
     "reject_unregistered_sources": true,
     "require_annual_review": true,
     "crisis_isolation_mandatory": true
-  }
+  },
+  "indexes": [
+    {
+      "name": "psychoeducation_index",
+      "description": "Educational content on mental health topics",
+      "primary_use": "psychoeducation",
+      "crisis_isolation": false,
+      "min_evidence_level": "educational"
+    },
+    {
+      "name": "coping_skills_index",
+      "description": "Practical techniques, exercises, and skills",
+      "primary_use": "coping_strategy",
+      "crisis_isolation": false,
+      "min_evidence_level": "clinical_self_help"
+    },
+    {
+      "name": "safety_crisis_index",
+      "description": "Crisis support, safety planning, emergency resources",
+      "primary_use": "crisis",
+      "crisis_isolation": true,
+      "min_evidence_level": "clinical_self_help"
+    },
+    {
+      "name": "methodology_index",
+      "description": "Technical documentation and RAG methodology",
+      "primary_use": "methodology",
+      "crisis_isolation": false,
+      "min_evidence_level": "educational"
+    }
+  ],
+  "sources": [
+    {
+      "filename": "9789240003910-eng.pdf",
+      "source_id": "WHO_Stress_Management_Guide",
+      "organization": "World Health Organization",
+      "year": 2024,
+      "title": "Stress Management and Well-being",
+      "evidence_level": "clinical_self_help",
+      "allowed_use": [
+        "psychoeducation"
+      ],
+      "allowed_indexes": [
+        "psychoeducation_index"
+      ],
+      "not_allowed": [
+        "crisis_intervention"
+      ],
+      "clinical_risk": "low",
+      "approval_date": "2026-05-19",
+      "next_review": "2027-05-19",
+      "review_status": "approved"
+    },
+    {
+      "filename": "23-MH-8110-Understanding-Psychosis.pdf",
+      "source_id": "WHO_Psychosis_Guide",
+      "organization": "World Health Organization",
+      "year": 2023,
+      "title": "Understanding Psychosis",
+      "evidence_level": "clinical_self_help",
+      "allowed_use": [
+        "psychoeducation"
+      ],
+      "allowed_indexes": [
+        "psychoeducation_index"
+      ],
+      "not_allowed": [
+        "crisis_intervention"
+      ],
+      "clinical_risk": "medium",
+      "approval_date": "2026-05-19",
+      "next_review": "2027-05-19",
+      "review_status": "approved"
+    },
+    {
+      "filename": "FS_GriefInAdults_EN_2025.pdf",
+      "source_id": "WHO_Grief_Factsheet",
+      "organization": "World Health Organization",
+      "year": 2025,
+      "title": "Grief in Adults - Fact Sheet",
+      "evidence_level": "clinical_self_help",
+      "allowed_use": [
+        "psychoeducation"
+      ],
+      "allowed_indexes": [
+        "psychoeducation_index"
+      ],
+      "not_allowed": [
+        "crisis_intervention"
+      ],
+      "clinical_risk": "low",
+      "approval_date": "2026-05-19",
+      "next_review": "2027-05-19",
+      "review_status": "approved"
+    },
+    {
+      "filename": "surgeon-general-social-connection-advisory.pdf",
+      "source_id": "US_SG_Social_Connection",
+      "organization": "US Surgeon General",
+      "year": 2023,
+      "title": "Social Connection and Public Health Advisory",
+      "evidence_level": "clinical_self_help",
+      "allowed_use": [
+        "psychoeducation"
+      ],
+      "allowed_indexes": [
+        "psychoeducation_index"
+      ],
+      "not_allowed": [
+        "crisis_intervention"
+      ],
+      "clinical_risk": "low",
+      "approval_date": "2026-05-19",
+      "next_review": "2027-05-19",
+      "review_status": "approved"
+    },
+    {
+      "filename": "clinical-research-trials-you-questions-answers.pdf",
+      "source_id": "Clinical_Trials_Guide",
+      "organization": "Clinical Research Resources",
+      "year": 2023,
+      "title": "Clinical Trials: Questions and Answers",
+      "evidence_level": "educational",
+      "allowed_use": [
+        "psychoeducation"
+      ],
+      "allowed_indexes": [
+        "psychoeducation_index",
+        "methodology_index"
+      ],
+      "not_allowed": [
+        "crisis_intervention"
+      ],
+      "clinical_risk": "low",
+      "approval_date": "2026-05-19",
+      "next_review": "2027-05-19",
+      "review_status": "approved"
+    },
+    {
+      "filename": "EMOTION REGULATION SKILLS MANUAL.pdf",
+      "source_id": "Emotion_Regulation_Skills",
+      "organization": "Clinical Resources",
+      "year": 2024,
+      "title": "Emotion Regulation Skills Manual",
+      "evidence_level": "clinical_self_help",
+      "allowed_use": [
+        "coping_strategy",
+        "psychoeducation"
+      ],
+      "allowed_indexes": [
+        "coping_skills_index",
+        "psychoeducation_index"
+      ],
+      "not_allowed": [],
+      "clinical_risk": "low",
+      "approval_date": "2026-05-19",
+      "next_review": "2027-05-19",
+      "review_status": "approved"
+    },
+    {
+      "filename": "DISTRESS TOLERANCE SKILLS MANUAL e-version.pdf",
+      "source_id": "Distress_Tolerance_Skills",
+      "organization": "Clinical Resources",
+      "year": 2024,
+      "title": "Distress Tolerance Skills Manual",
+      "evidence_level": "clinical_self_help",
+      "allowed_use": [
+        "coping_strategy",
+        "psychoeducation"
+      ],
+      "allowed_indexes": [
+        "coping_skills_index",
+        "safety_crisis_index"
+      ],
+      "not_allowed": [],
+      "clinical_risk": "medium",
+      "approval_date": "2026-05-19",
+      "next_review": "2027-05-19",
+      "review_status": "approved"
+    },
+    {
+      "filename": "rtp_unit-2-workbook.pdf",
+      "source_id": "RTP_Training_Workbook",
+      "organization": "Training Resources",
+      "year": 2023,
+      "title": "Resilience Training Program Workbook",
+      "evidence_level": "educational",
+      "allowed_use": [
+        "coping_strategy",
+        "psychoeducation"
+      ],
+      "allowed_indexes": [
+        "coping_skills_index"
+      ],
+      "not_allowed": [],
+      "clinical_risk": "low",
+      "approval_date": "2026-05-19",
+      "next_review": "2027-05-19",
+      "review_status": "approved"
+    },
+    {
+      "filename": "tips-for-talking-with-a-health-care-provider-about-your-mental-health_1.pdf",
+      "source_id": "Healthcare_Communication",
+      "organization": "Clinical Resources",
+      "year": 2023,
+      "title": "Tips for Talking with Healthcare Providers",
+      "evidence_level": "clinical_self_help",
+      "allowed_use": [
+        "psychoeducation",
+        "coping_strategy"
+      ],
+      "allowed_indexes": [
+        "psychoeducation_index"
+      ],
+      "not_allowed": [],
+      "clinical_risk": "low",
+      "approval_date": "2026-05-19",
+      "next_review": "2027-05-19",
+      "review_status": "approved"
+    },
+    {
+      "filename": "turkpsikoloji.1515430.pdf",
+      "source_id": "Turkish_Psychology_Journal",
+      "organization": "Turkish Psychological Association",
+      "year": 2023,
+      "title": "Turkish Psychology Journal Article",
+      "evidence_level": "clinical_self_help",
+      "allowed_use": [
+        "psychoeducation"
+      ],
+      "allowed_indexes": [
+        "psychoeducation_index"
+      ],
+      "not_allowed": [],
+      "clinical_risk": "low",
+      "approval_date": "2026-05-19",
+      "next_review": "2027-05-19",
+      "review_status": "approved"
+    },
+    {
+      "filename": "resiliencepsikolojik-dayaniklilik.pdf",
+      "source_id": "Turkish_Resilience_Guide",
+      "organization": "Turkish Psychology Resources",
+      "year": 2023,
+      "title": "Psikolojik Dayan\u0131kl\u0131l\u0131k (Resilience)",
+      "evidence_level": "clinical_self_help",
+      "allowed_use": [
+        "psychoeducation",
+        "coping_strategy"
+      ],
+      "allowed_indexes": [
+        "psychoeducation_index",
+        "coping_skills_index"
+      ],
+      "not_allowed": [],
+      "clinical_risk": "low",
+      "approval_date": "2026-05-19",
+      "next_review": "2027-05-19",
+      "review_status": "approved"
+    },
+    {
+      "filename": "1002672446-schoka.pdf",
+      "source_id": "Turkish_Mental_Health",
+      "organization": "Turkish Clinical Resources",
+      "year": 2023,
+      "title": "Turkish Mental Health Guide",
+      "evidence_level": "clinical_self_help",
+      "allowed_use": [
+        "psychoeducation"
+      ],
+      "allowed_indexes": [
+        "psychoeducation_index"
+      ],
+      "not_allowed": [],
+      "clinical_risk": "low",
+      "approval_date": "2026-05-19",
+      "next_review": "2027-05-19",
+      "review_status": "approved"
+    },
+    {
+      "filename": "annurev-psych-010418-102813.pdf",
+      "source_id": "Annual_Review_Psychology",
+      "organization": "Annual Reviews",
+      "year": 2018,
+      "title": "Annual Review of Psychology - Peer-Reviewed Research",
+      "evidence_level": "clinical_self_help",
+      "allowed_use": [
+        "psychoeducation",
+        "methodology"
+      ],
+      "allowed_indexes": [
+        "psychoeducation_index",
+        "methodology_index"
+      ],
+      "not_allowed": [],
+      "clinical_risk": "low",
+      "approval_date": "2026-05-19",
+      "next_review": "2027-05-19",
+      "review_status": "approved"
+    },
+    {
+      "filename": "Attachment Style and Dissolution of Romantic Relationships.pdf",
+      "source_id": "Attachment_Research",
+      "organization": "Academic Research",
+      "year": 2020,
+      "title": "Attachment Styles in Romantic Relationships",
+      "evidence_level": "clinical_self_help",
+      "allowed_use": [
+        "psychoeducation"
+      ],
+      "allowed_indexes": [
+        "psychoeducation_index"
+      ],
+      "not_allowed": [],
+      "clinical_risk": "low",
+      "approval_date": "2026-05-19",
+      "next_review": "2027-05-19",
+      "review_status": "approved"
+    },
+    {
+      "filename": "Anxiety_Sensitivity_and_Catastrophizing.pdf",
+      "source_id": "Anxiety_Research",
+      "organization": "Academic Research",
+      "year": 2021,
+      "title": "Anxiety Sensitivity and Catastrophic Thinking",
+      "evidence_level": "clinical_self_help",
+      "allowed_use": [
+        "psychoeducation"
+      ],
+      "allowed_indexes": [
+        "psychoeducation_index"
+      ],
+      "not_allowed": [],
+      "clinical_risk": "low",
+      "approval_date": "2026-05-19",
+      "next_review": "2027-05-19",
+      "review_status": "approved"
+    },
+    {
+      "filename": "Emotion_Regulation_through_Cognitive_Strategies.pdf",
+      "source_id": "Emotion_Regulation_Research",
+      "organization": "Academic Research",
+      "year": 2021,
+      "title": "Emotion Regulation through Cognitive Strategies",
+      "evidence_level": "clinical_self_help",
+      "allowed_use": [
+        "psychoeducation",
+        "coping_strategy"
+      ],
+      "allowed_indexes": [
+        "psychoeducation_index",
+        "coping_skills_index"
+      ],
+      "not_allowed": [],
+      "clinical_risk": "low",
+      "approval_date": "2026-05-19",
+      "next_review": "2027-05-19",
+      "review_status": "approved"
+    },
+    {
+      "filename": "Emotion_regulation.pdf",
+      "source_id": "Emotion_Regulation_Review",
+      "organization": "Academic Research",
+      "year": 2020,
+      "title": "Emotion Regulation: Theory and Practice",
+      "evidence_level": "clinical_self_help",
+      "allowed_use": [
+        "psychoeducation",
+        "coping_strategy"
+      ],
+      "allowed_indexes": [
+        "psychoeducation_index",
+        "coping_skills_index"
+      ],
+      "not_allowed": [],
+      "clinical_risk": "low",
+      "approval_date": "2026-05-19",
+      "next_review": "2027-05-19",
+      "review_status": "approved"
+    },
+    {
+      "filename": "Implications of Rejection Sensitivity for Intimate Relationships.pdf",
+      "source_id": "Rejection_Sensitivity_Research",
+      "organization": "Academic Research",
+      "year": 2019,
+      "title": "Rejection Sensitivity in Relationships",
+      "evidence_level": "clinical_self_help",
+      "allowed_use": [
+        "psychoeducation"
+      ],
+      "allowed_indexes": [
+        "psychoeducation_index"
+      ],
+      "not_allowed": [],
+      "clinical_risk": "low",
+      "approval_date": "2026-05-19",
+      "next_review": "2027-05-19",
+      "review_status": "approved"
+    },
+    {
+      "filename": "Psychology_of_Loneliness.pdf",
+      "source_id": "Loneliness_Research",
+      "organization": "Academic Research",
+      "year": 2018,
+      "title": "Psychology of Loneliness",
+      "evidence_level": "clinical_self_help",
+      "allowed_use": [
+        "psychoeducation"
+      ],
+      "allowed_indexes": [
+        "psychoeducation_index"
+      ],
+      "not_allowed": [],
+      "clinical_risk": "low",
+      "approval_date": "2026-05-19",
+      "next_review": "2027-05-19",
+      "review_status": "approved"
+    },
+    {
+      "filename": "Self-Esteem, Social Comparison, and Facebook Use.pdf",
+      "source_id": "Social_Media_Wellbeing",
+      "organization": "Academic Research",
+      "year": 2019,
+      "title": "Social Media and Self-Esteem",
+      "evidence_level": "clinical_self_help",
+      "allowed_use": [
+        "psychoeducation"
+      ],
+      "allowed_indexes": [
+        "psychoeducation_index"
+      ],
+      "not_allowed": [],
+      "clinical_risk": "low",
+      "approval_date": "2026-05-19",
+      "next_review": "2027-05-19",
+      "review_status": "approved"
+    },
+    {
+      "filename": "Self-Compassion, Self-Esteem, and Well-Being.pdf",
+      "source_id": "Self_Compassion_Research",
+      "organization": "Academic Research",
+      "year": 2020,
+      "title": "Self-Compassion and Well-Being",
+      "evidence_level": "clinical_self_help",
+      "allowed_use": [
+        "psychoeducation",
+        "coping_strategy"
+      ],
+      "allowed_indexes": [
+        "psychoeducation_index",
+        "coping_skills_index"
+      ],
+      "not_allowed": [],
+      "clinical_risk": "low",
+      "approval_date": "2026-05-19",
+      "next_review": "2027-05-19",
+      "review_status": "approved"
+    },
+    {
+      "filename": "Self-harm and PTSD among a sample of women in Turkey the role of self.pdf",
+      "source_id": "Turkish_PTSD_Research",
+      "organization": "Academic Research",
+      "year": 2021,
+      "title": "Self-Harm and PTSD in Turkish Population",
+      "evidence_level": "clinical_self_help",
+      "allowed_use": [
+        "psychoeducation"
+      ],
+      "allowed_indexes": [
+        "psychoeducation_index",
+        "safety_crisis_index"
+      ],
+      "not_allowed": [],
+      "clinical_risk": "high",
+      "approval_date": "2026-05-19",
+      "next_review": "2027-05-19",
+      "review_status": "approved"
+    },
+    {
+      "filename": "repetitive-negative-thinking-rumination.pdf",
+      "source_id": "Rumination_Research",
+      "organization": "Academic Research",
+      "year": 2020,
+      "title": "Rumination and Repetitive Negative Thinking",
+      "evidence_level": "clinical_self_help",
+      "allowed_use": [
+        "psychoeducation"
+      ],
+      "allowed_indexes": [
+        "psychoeducation_index"
+      ],
+      "not_allowed": [],
+      "clinical_risk": "low",
+      "approval_date": "2026-05-19",
+      "next_review": "2027-05-19",
+      "review_status": "approved"
+    },
+    {
+      "filename": "baumeister and leary.pdf",
+      "source_id": "Belonging_Motivation",
+      "organization": "Academic Research",
+      "year": 1995,
+      "title": "The Need to Belong: Motivation and Psychology",
+      "evidence_level": "clinical_self_help",
+      "allowed_use": [
+        "psychoeducation"
+      ],
+      "allowed_indexes": [
+        "psychoeducation_index"
+      ],
+      "not_allowed": [],
+      "clinical_risk": "low",
+      "approval_date": "2026-05-19",
+      "next_review": "2027-05-19",
+      "review_status": "approved"
+    },
+    {
+      "filename": "Isolation-and-loneliness-an-overview-of-literature.pdf",
+      "source_id": "Isolation_Loneliness_Review",
+      "organization": "Academic Research",
+      "year": 2022,
+      "title": "Isolation and Loneliness: Literature Review",
+      "evidence_level": "clinical_self_help",
+      "allowed_use": [
+        "psychoeducation"
+      ],
+      "allowed_indexes": [
+        "psychoeducation_index"
+      ],
+      "not_allowed": [],
+      "clinical_risk": "low",
+      "approval_date": "2026-05-19",
+      "next_review": "2027-05-19",
+      "review_status": "approved"
+    },
+    {
+      "filename": "Avoiding more than Intimacy_ Avoidant Attachment and the Avoidanc.pdf",
+      "source_id": "Avoidant_Attachment",
+      "organization": "Academic Research",
+      "year": 2019,
+      "title": "Avoidant Attachment Patterns",
+      "evidence_level": "clinical_self_help",
+      "allowed_use": [
+        "psychoeducation"
+      ],
+      "allowed_indexes": [
+        "psychoeducation_index"
+      ],
+      "not_allowed": [],
+      "clinical_risk": "low",
+      "approval_date": "2026-05-19",
+      "next_review": "2027-05-19",
+      "review_status": "approved"
+    },
+    {
+      "filename": "Thinking Errors and Self Defeating Beliefs-Anxiety and Depression.pdf",
+      "source_id": "Cognitive_Distortions",
+      "organization": "Clinical Resources",
+      "year": 2022,
+      "title": "Cognitive Distortions and Thinking Errors",
+      "evidence_level": "clinical_self_help",
+      "allowed_use": [
+        "psychoeducation",
+        "coping_strategy"
+      ],
+      "allowed_indexes": [
+        "psychoeducation_index"
+      ],
+      "not_allowed": [],
+      "clinical_risk": "low",
+      "approval_date": "2026-05-19",
+      "next_review": "2027-05-19",
+      "review_status": "approved"
+    },
+    {
+      "filename": "Cognitive-Distortions.pdf",
+      "source_id": "Cognitive_Errors_Guide",
+      "organization": "Clinical Resources",
+      "year": 2021,
+      "title": "Cognitive Distortions Guide",
+      "evidence_level": "clinical_self_help",
+      "allowed_use": [
+        "psychoeducation",
+        "coping_strategy"
+      ],
+      "allowed_indexes": [
+        "psychoeducation_index"
+      ],
+      "not_allowed": [],
+      "clinical_risk": "low",
+      "approval_date": "2026-05-19",
+      "next_review": "2027-05-19",
+      "review_status": "approved"
+    },
+    {
+      "filename": "cognitive-distortions (2).pdf",
+      "source_id": "Cognitive_Patterns",
+      "organization": "Clinical Resources",
+      "year": 2021,
+      "title": "Recognizing Cognitive Distortion Patterns",
+      "evidence_level": "clinical_self_help",
+      "allowed_use": [
+        "psychoeducation"
+      ],
+      "allowed_indexes": [
+        "psychoeducation_index"
+      ],
+      "not_allowed": [],
+      "clinical_risk": "low",
+      "approval_date": "2026-05-19",
+      "next_review": "2027-05-19",
+      "review_status": "approved"
+    },
+    {
+      "filename": "Body Image - How we think and feel about our bodies.pdf",
+      "source_id": "Body_Image_Guide",
+      "organization": "Clinical Resources",
+      "year": 2022,
+      "title": "Body Image and Self-Perception",
+      "evidence_level": "clinical_self_help",
+      "allowed_use": [
+        "psychoeducation"
+      ],
+      "allowed_indexes": [
+        "psychoeducation_index"
+      ],
+      "not_allowed": [],
+      "clinical_risk": "low",
+      "approval_date": "2026-05-19",
+      "next_review": "2027-05-19",
+      "review_status": "approved"
+    },
+    {
+      "filename": "Learned-Helplessness.pdf",
+      "source_id": "Learned_Helplessness",
+      "organization": "Academic Research",
+      "year": 2020,
+      "title": "Learned Helplessness Theory",
+      "evidence_level": "clinical_self_help",
+      "allowed_use": [
+        "psychoeducation"
+      ],
+      "allowed_indexes": [
+        "psychoeducation_index"
+      ],
+      "not_allowed": [],
+      "clinical_risk": "low",
+      "approval_date": "2026-05-19",
+      "next_review": "2027-05-19",
+      "review_status": "approved"
+    },
+    {
+      "filename": "HO15_ThnkngAbtThnkng.pdf",
+      "source_id": "Metacognition_Guide",
+      "organization": "Clinical Resources",
+      "year": 2021,
+      "title": "Thinking About Thinking: Metacognition",
+      "evidence_level": "clinical_self_help",
+      "allowed_use": [
+        "psychoeducation"
+      ],
+      "allowed_indexes": [
+        "psychoeducation_index"
+      ],
+      "not_allowed": [],
+      "clinical_risk": "low",
+      "approval_date": "2026-05-19",
+      "next_review": "2027-05-19",
+      "review_status": "approved"
+    },
+    {
+      "filename": "post-traumatic-stress-disorder_1.pdf",
+      "source_id": "PTSD_Guide",
+      "organization": "Clinical Resources",
+      "year": 2023,
+      "title": "Understanding Post-Traumatic Stress Disorder",
+      "evidence_level": "clinical_self_help",
+      "allowed_use": [
+        "psychoeducation"
+      ],
+      "allowed_indexes": [
+        "psychoeducation_index",
+        "safety_crisis_index"
+      ],
+      "not_allowed": [],
+      "clinical_risk": "high",
+      "approval_date": "2026-05-19",
+      "next_review": "2027-05-19",
+      "review_status": "approved"
+    },
+    {
+      "filename": "Trauma-Informed-Behaviour-Support-A-Practical-Guide-to-Developing-Resilient-Learners-1673306765.pdf",
+      "source_id": "Trauma_Informed_Support",
+      "organization": "Educational Resources",
+      "year": 2022,
+      "title": "Trauma-Informed Behavior Support",
+      "evidence_level": "clinical_self_help",
+      "allowed_use": [
+        "psychoeducation",
+        "coping_strategy"
+      ],
+      "allowed_indexes": [
+        "coping_skills_index",
+        "safety_crisis_index"
+      ],
+      "not_allowed": [],
+      "clinical_risk": "high",
+      "approval_date": "2026-05-19",
+      "next_review": "2027-05-19",
+      "review_status": "approved"
+    },
+    {
+      "filename": "helping-children-and-adolescents-cope-with-traumatic-events.pdf",
+      "source_id": "Childhood_Trauma_Support",
+      "organization": "NIMH",
+      "year": 2020,
+      "title": "Helping Youth Cope with Trauma",
+      "evidence_level": "clinical_self_help",
+      "allowed_use": [
+        "psychoeducation",
+        "coping_strategy"
+      ],
+      "allowed_indexes": [
+        "coping_skills_index",
+        "safety_crisis_index"
+      ],
+      "not_allowed": [],
+      "clinical_risk": "high",
+      "approval_date": "2026-05-19",
+      "next_review": "2027-05-19",
+      "review_status": "approved"
+    },
+    {
+      "filename": "social-anxiety-challenging-anxious-thinking.pdf",
+      "source_id": "Social_Anxiety_CBT",
+      "organization": "Clinical Resources",
+      "year": 2022,
+      "title": "Social Anxiety: Challenging Anxious Thoughts",
+      "evidence_level": "clinical_self_help",
+      "allowed_use": [
+        "psychoeducation",
+        "coping_strategy"
+      ],
+      "allowed_indexes": [
+        "psychoeducation_index",
+        "coping_skills_index"
+      ],
+      "not_allowed": [],
+      "clinical_risk": "low",
+      "approval_date": "2026-05-19",
+      "next_review": "2027-05-19",
+      "review_status": "approved"
+    },
+    {
+      "filename": "perinatal-depression.pdf",
+      "source_id": "Perinatal_Mental_Health",
+      "organization": "Clinical Resources",
+      "year": 2023,
+      "title": "Perinatal Depression: Support and Treatment",
+      "evidence_level": "clinical_self_help",
+      "allowed_use": [
+        "psychoeducation"
+      ],
+      "allowed_indexes": [
+        "psychoeducation_index"
+      ],
+      "not_allowed": [],
+      "clinical_risk": "high",
+      "approval_date": "2026-05-19",
+      "next_review": "2027-05-19",
+      "review_status": "approved"
+    },
+    {
+      "filename": "obsessive-compulsive-disorder-508.pdf",
+      "source_id": "OCD_Guide",
+      "organization": "Clinical Resources",
+      "year": 2022,
+      "title": "Understanding Obsessive-Compulsive Disorder",
+      "evidence_level": "clinical_self_help",
+      "allowed_use": [
+        "psychoeducation"
+      ],
+      "allowed_indexes": [
+        "psychoeducation_index"
+      ],
+      "not_allowed": [],
+      "clinical_risk": "medium",
+      "approval_date": "2026-05-19",
+      "next_review": "2027-05-19",
+      "review_status": "approved"
+    },
+    {
+      "filename": "bipolar-disorder.pdf",
+      "source_id": "Bipolar_Disorder_Guide",
+      "organization": "Clinical Resources",
+      "year": 2023,
+      "title": "Bipolar Disorder: Understanding and Managing",
+      "evidence_level": "clinical_self_help",
+      "allowed_use": [
+        "psychoeducation"
+      ],
+      "allowed_indexes": [
+        "psychoeducation_index"
+      ],
+      "not_allowed": [],
+      "clinical_risk": "high",
+      "approval_date": "2026-05-19",
+      "next_review": "2027-05-19",
+      "review_status": "approved"
+    },
+    {
+      "filename": "Fundamentals-of-Psychological-Disorders.pdf",
+      "source_id": "Psych_Disorders_Textbook",
+      "organization": "Academic Resources",
+      "year": 2022,
+      "title": "Fundamentals of Psychological Disorders",
+      "evidence_level": "educational",
+      "allowed_use": [
+        "psychoeducation",
+        "methodology"
+      ],
+      "allowed_indexes": [
+        "psychoeducation_index",
+        "methodology_index"
+      ],
+      "not_allowed": [],
+      "clinical_risk": "medium",
+      "approval_date": "2026-05-19",
+      "next_review": "2027-05-19",
+      "review_status": "approved"
+    },
+    {
+      "filename": "stand-up-to-stress-coloring-activity-book.pdf",
+      "source_id": "Stress_Management_Activities",
+      "organization": "Wellness Resources",
+      "year": 2022,
+      "title": "Stand Up to Stress: Activities for Coping",
+      "evidence_level": "clinical_self_help",
+      "allowed_use": [
+        "coping_strategy"
+      ],
+      "allowed_indexes": [
+        "coping_skills_index"
+      ],
+      "not_allowed": [],
+      "clinical_risk": "low",
+      "approval_date": "2026-05-19",
+      "next_review": "2027-05-19",
+      "review_status": "approved"
+    }
+  ]
 }

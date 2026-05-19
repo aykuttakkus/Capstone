@@ -1,0 +1,44 @@
+================================================================================
+CALMA RAG SYSTEM - FİNAL BENCHMARK ÖZET
+================================================================================
+
+Tarih: 2026-05-19T11:32:53.240780
+Toplam Senaryo: 5
+Başarılı Senaryo: 1
+Başarı Oranı: %20.0
+Toplam Süre: 237.9 saniye
+
+METRİKLER:
+--------------------------------------------------------------------------------
+  Intent Doğruluğu: %96.0
+  Risk Doğruluğu: %80.0
+  Tutarlılık Skoru: %2.4
+  GENEL SKOR: %59.5
+
+SENARYO DETAYLARI:
+--------------------------------------------------------------------------------
+
+✅ Anksiyete Yaşayan Genç Yetişkin
+   ID: scenario_anxious_001
+   Tamamlanan Tur: 5
+   Bağlam Koruma: Evet
+
+❌ Depresyon Yaşayan Anne
+   ID: scenario_depressed_001
+   Tamamlanan Tur: 5
+   Bağlam Koruma: Hayır
+
+❌ Krizdeki Genç
+   ID: scenario_crisis_001
+   Tamamlanan Tur: 5
+   Bağlam Koruma: Hayır
+
+❌ Travma Kurbanı
+   ID: scenario_trauma_001
+   Tamamlanan Tur: 5
+   Bağlam Koruma: Hayır
+
+❌ Tükenmişlik Yaşayan Profesyonel
+   ID: scenario_burnout_001
+   Tamamlanan Tur: 5
+   Bağlam Koruma: Hayır

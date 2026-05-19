@@ -1,3 +1,33 @@
+"""
+DEPRECATED: This module implements the rigid 14-step pipeline system (v2.1).
+
+This has been superseded by the new conversational AI system (v3) in:
+  - /app/services/conversational_assistant.py
+  - /app/services/rag_augmentation.py
+  - /app/services/risk_detection.py
+  - /app/services/escalation.py
+  - /app/api/chat/routes_v3.py
+
+The new system offers:
+  ✅ Natural dialogue flow (no rigid modules)
+  ✅ Full context awareness (conversation history + user state + RAG)
+  ✅ No template responses (LLM always generates)
+  ✅ Decoupled safety (risk detection doesn't gate responses)
+  ✅ Invisible RAG (knowledge naturally integrated)
+
+See `/docs/calma_new_system.md` for the original spec, which this module attempted to implement.
+The new system (v3) abandons rigid modularity in favor of conversational AI.
+
+To use the new system, access `/api/chat-v3/` instead of `/api/chat/`.
+
+DEPRECATION TIMELINE:
+  - Phase 5 (current): New system in parallel, old system still available
+  - Phase 6 (future): Migrate `/api/chat/` to new system, archive old routes
+  - Phase 7 (future): Remove old pipeline code completely
+
+DO NOT build new features on this module. All new work should use the v3 system.
+"""
+
 from __future__ import annotations
 
 import time
@@ -11,6 +41,7 @@ from server.app.core.agents.fallback_handler import FallbackHandler, FallbackMod
 from server.app.core.agents.orchestrator import Orchestrator
 from server.app.core.agents.response_planner import ResponsePlan
 from server.app.core.agents.safety_guardian import SafetyAnalysis, SafetyGuardian
+from server.app.core.generation.llm import OllamaClient
 from server.app.core.pipeline.response_modes import ResponseMode, ResponseModeContext, ResponseModeSelector, enforce_length_constraint
 from server.app.core.pipeline.context_manager import ContextManager, ConversationContext
 from server.app.core.pipeline.intent_detector import IntentDetector
@@ -18,6 +49,7 @@ from server.app.core.pipeline.risk_state import RiskState
 from server.app.core.pipeline.rag_decision import RAGDecisionModule
 from server.app.core.pipeline.escalation_logic import HumanEscalationLogic
 from server.app.core.pipeline.memory_updater import MemoryUpdater, MemoryUpdateResult
+from server.app.rag_v2.rag_engine import RAGEngine
 
 
 @dataclass(slots=True)
@@ -27,10 +59,14 @@ class PipelineContext:
     intent: str
     risk_level: int = 0
     conversation_history: list[str] = field(default_factory=list)
+    conversation_log: list[dict[str, Any]] = field(default_factory=list)  # Enhanced conversation tracking
     retrieved_content: str | None = None
     profile_context: dict[str, Any] | None = None
     screening_state: dict[str, Any] | None = None
     risk_state: RiskState = field(default_factory=lambda: RiskState(current_risk_level="none"))
+    session_id: str | None = None
+    session_summary: dict[str, Any] = field(default_factory=dict)  # Persistent session summary
+    previous_responses: list[str] = field(default_factory=list)  # For coherence
 
 
 @dataclass(slots=True)
@@ -72,6 +108,8 @@ class PipelineOrchestrator:
         quality_critic: QualityCritic,
         fallback_handler: FallbackHandler,
         safety_guardian: SafetyGuardian | None = None,
+        rag_engine: RAGEngine | None = None,
+        llm_client: OllamaClient | None = None,
     ) -> None:
         self.orchestrator = orchestrator
         self.distress_monitor = distress_monitor
@@ -85,6 +123,11 @@ class PipelineOrchestrator:
         self.mode_selector = ResponseModeSelector()
         self.context_manager = ContextManager()
         self.intent_detector = IntentDetector()
+        self.rag_engine = rag_engine or RAGEngine()
+        self.llm_client = llm_client or OllamaClient()
+        self.session_conversations: dict[str, list[dict[str, Any]]] = {}  # Session-based conversation storage
+        self.session_summaries: dict[str, dict[str, Any]] = {}  # Session-based summary storage
+        self.session_responses: dict[str, list[str]] = {}  # Session-based response history
 
     async def execute(
         self,
@@ -95,8 +138,34 @@ class PipelineOrchestrator:
         start_time = time.time()
         warnings = []
 
-        # Step 1: Context Manager
-        # (Already in PipelineContext)
+        # Step 1: Context Manager - Enhanced with session tracking
+        session_id = context.session_id or "default_session"
+        
+        # Retrieve previous conversation data for this session
+        previous_conversation = self.session_conversations.get(session_id, [])
+        previous_summary = self.session_summaries.get(session_id, {})
+        previous_responses = self.session_responses.get(session_id, [])
+        
+        # Build enhanced context package
+        context_package = self.context_manager.build_context_package(
+            current_user_message=context.user_message,
+            recent_conversation=previous_conversation + [
+                {"role": "user", "content": context.user_message, "intent": context.intent}
+            ],
+            session_summary=previous_summary,
+            user_state=context.profile_context,
+            risk_state=context.risk_state,
+            max_turns=8,
+            include_summaries=True,
+            include_key_entities=True,
+            include_risk_evolution=True,
+            previous_responses=previous_responses,
+        )
+        
+        # Update context with enhanced information
+        context.session_summary = context_package.session_summary
+        context.conversation_log = context_package.recent_conversation
+        context.previous_responses = previous_responses
 
         # Step 2: Safety Triage
         safety_result = self.safety_guardian.analyze(context.user_message)
@@ -136,7 +205,21 @@ class PipelineOrchestrator:
             has_recent_retrieval=False,  # Could track from session
         )
 
-        # Step 6: Evidence Retrieval (handled by response generation)
+        # Step 6: Evidence Retrieval (FAISS-based RAG)
+        if rag_decision.use_rag and retrieval_available:
+            try:
+                rag_response = self.rag_engine.answer(
+                    query=context.user_message,
+                    top_k=rag_decision.retrieve_amount or 3,
+                )
+                if rag_response.retrieved_chunks:
+                    context.retrieved_content = rag_response.context
+                    # Log retrieval info for debugging
+                    print(f"[RAG] Retrieved {len(rag_response.retrieved_chunks)} chunks from indexes: {rag_response.sources}")
+            except Exception as e:
+                print(f"[RAG] Retrieval failed: {e}")
+                # Continue without retrieval - fallback to non-RAG response
+                rag_decision.use_rag = False
 
         # Step 7: Response Planner
         # (Integrated in mode selection and generation)
@@ -202,11 +285,65 @@ class PipelineOrchestrator:
 
         # Step 13: Final Response (PipelineResult)
 
-        # Step 14: Memory Update (spec §31 structured update)
+        # Step 14: Memory Update (spec §31 structured update) - Enhanced with session persistence
         memory_result = self._update_memory(
             context, response, response_mode,
             distress_signals=[s.category for s in distress_analysis.signals],
         )
+        
+        # Update session storage for context persistence across turns
+        if session_id:
+            # Add current turn to conversation history
+            current_turn = {
+                "role": "assistant",
+                "content": response,
+                "mode": response_mode.value,
+                "intent": context.intent,
+                "risk_level": context.risk_level,
+                "quality_score": quality_score if response_mode != ResponseMode.CRISIS else 1.0,
+            }
+            
+            # Update conversation log
+            if session_id not in self.session_conversations:
+                self.session_conversations[session_id] = []
+            self.session_conversations[session_id].append({
+                "role": "user",
+                "content": context.user_message,
+                "intent": context.intent,
+            })
+            self.session_conversations[session_id].append(current_turn)
+            
+            # Sliding window: Son 8 turu tut (Global standart: 4-8 turn)
+            if len(self.session_conversations[session_id]) > 16:  # 8 kullanıcı + 8 AI mesajı
+                self.session_conversations[session_id] = self.session_conversations[session_id][-16:]
+            
+            # Update session summary with latest information
+            if session_id not in self.session_summaries:
+                self.session_summaries[session_id] = {}
+            
+            self.session_summaries[session_id].update({
+                "last_turn": len(self.session_conversations[session_id]) // 2,
+                "last_risk_level": context.risk_level,
+                "last_intent": context.intent,
+                "last_topic": context.topic,
+                "main_topics": context.session_summary.get("main_topics", []),
+                "key_entities": context.session_summary.get("key_entities", []),
+                "risk_evolution": context.session_summary.get("risk_evolution", {}),
+                "updated_at": time.time(),
+            })
+            
+            # GLOBAL BEST PRACTICE 2: Session Persistence + Sliding Window
+            if session_id not in self.session_responses:
+                self.session_responses[session_id] = []
+            self.session_responses[session_id].append(response)
+            
+            # Sliding window: Son 8 yanıtı tut (OpenAI/LangChain standardı)
+            if len(self.session_responses[session_id]) > 8:
+                self.session_responses[session_id] = self.session_responses[session_id][-8:]
+            
+            # Keep only last 5 responses
+            if len(self.session_responses[session_id]) > 5:
+                self.session_responses[session_id] = self.session_responses[session_id][-5:]
 
         execution_time = (time.time() - start_time) * 1000
 
@@ -249,27 +386,328 @@ class PipelineOrchestrator:
         llm_available: bool,
         retrieval_available: bool,
     ) -> str:
+        # ============================================
+        # YENİ: HER ZAMAN LLM KULLAN
+        # ============================================
+        print(f"[DEBUG] _generate_response called with intent: {context.intent}")
+        print(f"[DEBUG] retrieved_content length: {len(context.retrieved_content) if context.retrieved_content else 0}")
+        
+        # Eski fallback kodunu devre dışı bırak
+        # if context.intent in ["emotional_support", "clarification"] and not context.retrieved_content:
+        #     ... (fallback kodu devre dışı)
+        
+        # Build coherence context from previous responses
+        coherence_context = ""
+        if context.previous_responses:
+            coherence_context = "\n\n[Previous Response Summary]:\n"
+            for i, prev_resp in enumerate(context.previous_responses[-3:], 1):
+                # Extract key points from previous response (first 200 chars)
+                summary = prev_resp[:200].replace("[MODE:", "").replace("]", "")
+                coherence_context += f"{i}. {summary}...\n"
+        
+        # Build enhanced conversation history with context
+        enhanced_history = context.conversation_history.copy()
+        
+        # Add key entities and topics from session summary if available
+        if context.session_summary:
+            if "key_entities" in context.session_summary:
+                entities = context.session_summary["key_entities"]
+                if entities:
+                    entity_summary = "[Key Topics in Conversation]: " + ", ".join(
+                        [e.get("type", "") for e in entities[:5]]
+                    )
+                    enhanced_history.append(entity_summary)
+            
+            if "main_topics" in context.session_summary:
+                topics = context.session_summary["main_topics"]
+                if topics:
+                    topic_summary = "[Main Topics]: " + ", ".join(topics[:3])
+                    enhanced_history.append(topic_summary)
+        
         mode_context = ResponseModeContext(
             mode=mode,
             user_message=context.user_message,
             topic=context.topic,
             risk_level=context.risk_level,
-            conversation_history=context.conversation_history,
+            conversation_history=enhanced_history,
             retrieved_content=context.retrieved_content,
             intent=context.intent,
             profile_context=context.profile_context,
         )
 
-        builder = self.mode_selector.select_builder(mode)
-        prompt = builder.build(mode_context)
+        # ============================================
+        # YENİ: QWEN LLM İLE DİNAMİK YANIT ÜRETİMİ
+        # ============================================
+        
+        print(f"[DEBUG] Starting LLM generation for intent: {context.intent}")
+        print(f"[DEBUG] Retrieved content length: {len(context.retrieved_content) if context.retrieved_content else 0}")
+        
+        # LLM için zengin prompt oluştur
+        llm_prompt = self._build_llm_prompt(context, mode, coherence_context)
+        print(f"[DEBUG] LLM Prompt built, length: {len(llm_prompt)}")
+        
+        # Qwen LLM'den yanıt al
+        try:
+            print("[DEBUG] Calling OllamaClient.generate()...")
+            llm_result = self.llm_client.generate(prompt=llm_prompt, temperature=0.7)
+            print(f"[DEBUG] LLM result available: {llm_result.available}")
+            print(f"[DEBUG] LLM result text length: {len(llm_result.text) if llm_result.text else 0}")
+            
+            if llm_result.available and llm_result.text:
+                # LLM yanıtını kullan - DOĞRUDAN, MÜDAHALE ETME
+                response = llm_result.text.strip()
+                print(f"[DEBUG] Using LLM response: {response[:100]}...")
+                
+                # LLM'e güven, müdahale etme
+                return enforce_length_constraint(response, mode)
+            else:
+                # LLM çalışmadı, fallback kullan
+                print("[WARNING] LLM not available, using fallback")
+                return self._generate_contextual_response(context, mode)
+                
+        except Exception as e:
+            print(f"[ERROR] LLM generation failed: {e}")
+            import traceback
+            traceback.print_exc()
+            return self._generate_contextual_response(context, mode)
+    
+    def _build_llm_prompt(self, context: PipelineContext, mode: ResponseMode, coherence_context: str) -> str:
+        """Qwen LLM için zengin, bağlamsal prompt oluştur - Global Best Practices: Sliding Window + Session Persistence"""
+        
+        # GLOBAL BEST PRACTICE 1: Sliding Window (Son 6 mesajı tut - token limit için)
+        # OpenAI, LangChain, Anthropic hepsi son N mesaj yaklaşımını kullanır
+        session_id = context.session_id or "default_session"
+        MAX_HISTORY_TURNS = 6  # Global standart: 4-8 turn
+        
+        # Session'dan konuşma geçmişini al (Kullanıcı + AI mesajları)
+        session_conv = self.session_conversations.get(session_id, [])
+        session_responses = self.session_responses.get(session_id, [])
+        
+        # Konuşma geçmişini formatla (Kullanıcı-AI çiftleri)
+        history_lines = []
+        
+        # Önceki mesajları ekle (Sliding window: son MAX_HISTORY_TURNS tur)
+        start_idx = max(0, len(session_conv) - MAX_HISTORY_TURNS)
+        
+        for i in range(start_idx, len(session_conv)):
+            user_msg = session_conv[i].get("content", "") if i < len(session_conv) else ""
+            ai_msg = session_responses[i] if i < len(session_responses) else ""
+            
+            if user_msg:
+                history_lines.append(f"Kullanıcı: {user_msg}")
+            if ai_msg:
+                # AI yanıtını kısalt (token tasarrufu)
+                ai_short = ai_msg[:200] + "..." if len(ai_msg) > 200 else ai_msg
+                history_lines.append(f"Sen: {ai_short}")
+        
+        # Şu anki kullanıcı mesajını da ekle
+        history_lines.append(f"Kullanıcı: {context.user_message}")
+        
+        history_text = "\n\n".join(history_lines) if history_lines else "(Yeni konuşma)"
+        
+        # FAISS'ten gelen bilgileri al
+        knowledge_text = ""
+        if context.retrieved_content:
+            # Klinik/soğuk ifadeleri temizle
+            knowledge_text = self._clean_knowledge(context.retrieved_content)
+        
+        # BASİT VE ETKİLİ PROMPT - LLM'e özgürlük ver
+        # RAG sadece bilgi kaynağı, LLM doğal konuşsun
+        
+        prompt = f"""Sen empati dolu, samimi bir sohbet arkadaşısın. Doğal bir insan gibi konuş.
 
-        if not llm_available or not retrieval_available:
-            fallback = self.fallback_handler.handle(
-                llm_available, retrieval_available, context.topic, context.intent, context.user_message
-            )
-            return enforce_length_constraint(fallback.answer, mode)
+KONUŞMA GEÇMİŞİ:
+{history_text if history_text else "(Yeni konuşma başlıyor)"}
 
-        return enforce_length_constraint(f"[MODE: {mode.value}]\n\n{prompt}", mode)
+ŞU ANKİ MESAJ:
+Kullanıcı: {context.user_message}
+
+YARDIMCI BİLGİLER (Kaynaklardan):
+{knowledge_text if knowledge_text else "Genel destek konuşması yap"}
+
+GÖREV:
+- Doğal, samimi bir şekilde yanıt ver
+- Konuşmayı kesme, devam ettir
+- Kullanıcı "evet" derse, hemen bilgiyi paylaş (tekrar sorma)
+- Soğuk, klinik ifadeler kullanma
+- Gerekirse bilgiyi doğrudan ver, "paylaşabilirim" demekle yetinme
+
+Yanıtın:"""
+        
+        return prompt
+    
+    def _clean_knowledge(self, knowledge: str) -> str:
+        """FAISS'ten gelen bilgilerden klinik/soğuk ifadeleri temizle"""
+        cold_phrases = [
+            "i'm really sorry",
+            "unable to provide",
+            "one-on-one counseling",
+            "personalized advice",
+            "i'm not a therapist",
+            "i cannot diagnose",
+            "professional help",
+            "mental health professional",
+            "seek professional",
+            "consult a professional",
+            "if you feel that your feelings persist",
+            "reach out to a mental health professional",
+        ]
+        
+        cleaned = knowledge
+        for phrase in cold_phrases:
+            cleaned = cleaned.replace(phrase, "")
+            cleaned = cleaned.replace(phrase.title(), "")
+        
+        # Fazla boşlukları temizle
+        cleaned = " ".join(cleaned.split())
+        
+        return cleaned[:800]  # LLM token limit için kısalt
+    
+    def _contains_clinical_language(self, response: str) -> bool:
+        """Check if response contains cold/clinical language that pushes user away"""
+        cold_phrases = [
+            "unable to provide",
+            "one-on-one counseling",
+            "personalized advice",
+            "i'm not a therapist",
+            "i cannot diagnose",
+            "professional help",
+            "mental health professional",
+            "seek professional",
+            "consult a professional",
+        ]
+        response_lower = response.lower()
+        return any(phrase in response_lower for phrase in cold_phrases)
+    
+    def _add_warm_framing(self, context: PipelineContext, original_response: str) -> str:
+        """Add warm, empathetic framing around clinical responses"""
+        
+        # Extract the actual useful content (remove the cold disclaimers)
+        lines = original_response.split('\n')
+        useful_lines = []
+        
+        for line in lines:
+            line_lower = line.lower()
+            # Skip cold disclaimer lines
+            if any(phrase in line_lower for phrase in [
+                "i'm really sorry",
+                "unable to provide",
+                "one-on-one counseling",
+                "personalized advice",
+                "i'm not a therapist",
+                "i cannot",
+                "please consult",
+                "seek professional",
+            ]):
+                continue
+            useful_lines.append(line)
+        
+        # Get useful content
+        useful_content = ' '.join(useful_lines).strip()
+        
+        # Create warm opening based on topic
+        user_msg = context.user_message.lower()
+        
+        if "lonely" in user_msg or "alone" in user_msg:
+            warm_opening = "I hear you. Feeling lonely, especially when you're surrounded by people, is one of the most painful experiences. That disconnect you described—the feeling that nobody understands—it's real, and it matters."
+        elif "anxious" in user_msg or "worried" in user_msg:
+            warm_opening = "Thank you for trusting me with that. Anxiety can feel overwhelming, and those racing thoughts can be exhausting. What you're feeling is valid."
+        elif "sad" in user_msg or "depressed" in user_msg:
+            warm_opening = "I appreciate you sharing that with me. Sadness can feel heavy and isolating. It's okay to not be okay right now."
+        elif "understand" in user_msg and "nobody" in user_msg:
+            warm_opening = "Feeling like nobody understands you can be incredibly isolating. That pain is real, and it makes sense that you'd want to talk about it."
+        else:
+            warm_opening = "Thank you for sharing that with me. What you're going through sounds really difficult, and I want you to know that your feelings are valid."
+        
+        # Combine warm opening with useful content (if any)
+        if useful_content and len(useful_content) > 20:
+            # Clean up the content - remove repetitive professional referrals at the end
+            cleaned_content = self._clean_clinical_endings(useful_content)
+            if cleaned_content:
+                warm_response = f"{warm_opening}\n\n{cleaned_content}\n\nI'm here to listen and talk through this with you. What feels most important right now?"
+            else:
+                warm_response = f"{warm_opening}\n\nI'm here to listen and talk through this with you. Would you like to tell me more about what you're experiencing?"
+        else:
+            warm_response = f"{warm_opening}\n\nI'm here to listen and talk through this with you. Would you like to tell me more about what you're experiencing?"
+        
+        return warm_response
+    
+    def _clean_clinical_endings(self, content: str) -> str:
+        """Remove clinical/professional referral endings from content"""
+        endings_to_remove = [
+            "if you feel that your feelings persist or worsen, it might be helpful to reach out to a mental health professional.",
+            "please consult with a mental health professional.",
+            "seek professional help if needed.",
+            "consider reaching out to a therapist.",
+            "you may want to speak with a professional.",
+        ]
+        
+        content_lower = content.lower()
+        for ending in endings_to_remove:
+            idx = content_lower.find(ending)
+            if idx != -1:
+                content = content[:idx].strip()
+                content_lower = content.lower()
+        
+        return content.strip()
+    
+    def _generate_contextual_response(self, context: PipelineContext, mode: ResponseMode) -> str:
+        """Generate a contextual response based on user's specific message"""
+        
+        user_msg = context.user_message.lower()
+        topic = context.topic.lower()
+        
+        # TOPIC-SPECIFIC EMPATHETIC RESPONSES
+        # These actually address what the user said, not generic templates
+        
+        if "lonely" in user_msg or "alone" in user_msg or topic == "loneliness":
+            if "around people" in user_msg or "surrounded" in user_msg:
+                response = "Feeling lonely even when you're with others can be especially painful. It's like there's a wall between you and everyone else. That disconnect you're feeling is real, and it matters."
+            else:
+                response = "Loneliness can feel really heavy, like you're carrying something invisible that others can't see. Thank you for sharing this with me—it takes courage to talk about."
+        
+        elif "understand" in user_msg and ("nobody" in user_msg or "no one" in user_msg):
+            response = "Feeling like nobody understands you is incredibly isolating. It's painful when it seems like others can't see what you're going through. Your feelings are valid, and they matter."
+        
+        elif "anxious" in user_msg or "anxiety" in user_msg or "worried" in user_msg:
+            if "heart" in user_msg or "chest" in user_msg or "physical" in user_msg:
+                response = "Those physical sensations—the racing heart, the tightness—are your body's way of sounding an alarm. Anxiety manifests in very real physical ways, and what you're experiencing is valid."
+            else:
+                response = "Anxiety can feel overwhelming, like your mind won't quiet down. It's exhausting to carry that weight. What you're feeling is more common than you might think, and it doesn't mean you're weak."
+        
+        elif "sad" in user_msg or "depressed" in user_msg or "hopeless" in user_msg:
+            if "hopeless" in user_msg or "pointless" in user_msg:
+                response = "When everything feels pointless, it's hard to find the energy to keep going. That heaviness you're describing is real, and it's okay to feel it. You don't have to carry this alone."
+            else:
+                response = "Sadness can feel like a weight that won't lift. It's okay to not be okay right now. Your feelings are valid, and they don't define your worth."
+        
+        elif "tired" in user_msg or "exhausted" in user_msg or "burnout" in user_msg:
+            response = "Being emotionally exhausted is just as real as physical exhaustion. When you're running on empty, everything feels harder. It's okay to acknowledge that you're depleted."
+        
+        elif "can't cope" in user_msg or "can't handle" in user_msg or "overwhelmed" in user_msg:
+            response = "Feeling like you can't cope doesn't mean you're failing—it means you're human, and you're carrying a lot right now. What you're feeling makes sense given what you're going through."
+        
+        elif "okay" in user_msg or "fine" in user_msg:
+            if len(user_msg) < 20:  # Short responses like "I'm okay"
+                response = "Sometimes 'okay' is what we say when the real answer feels too heavy to share. If you're not really okay, that's okay too. I'm here to listen."
+            else:
+                response = "I hear you. Sometimes we say we're okay even when we're not. Whatever you're feeling is valid."
+        
+        else:
+            # Default empathetic response that actually acknowledges the person
+            response = "Thank you for sharing that with me. What you're going through sounds really difficult, and I want you to know that your feelings are valid. I'm here to listen."
+        
+        # Add gentle follow-up question or statement based on conversation progress
+        if len(context.conversation_history) <= 2:  # Early in conversation
+            response += " Would you like to tell me more about what you're experiencing?"
+        elif len(context.conversation_history) > 4:  # Deeper into conversation
+            response += " What feels most important for you to talk about right now?"
+        
+        # Add retrieved content ONLY if it adds value and is not educational when user needs support
+        if context.retrieved_content and mode != ResponseMode.EMOTIONAL_SUPPORT:
+            response += f"\n\nI found some information that might help: {context.retrieved_content[:200]}..."
+        
+        return enforce_length_constraint(response, mode)
 
     def _generate_crisis_response(self, context: PipelineContext) -> str:
         builder = self.mode_selector.select_builder(ResponseMode.CRISIS)

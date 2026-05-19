@@ -24,13 +24,13 @@ class RAGDecisionModule:
 
     # Intent categories that don't typically need retrieval
     SELF_CONTAINED_INTENTS = {
-        "emotional_support",  # Validation and empathy, not information
         "clarification",      # Clarifying previous responses
         "repair",            # Fixing misunderstandings
     }
 
     # Intent categories that always benefit from retrieval
     RETRIEVAL_DEPENDENT_INTENTS = {
+        "emotional_support",    # Needs empathy + relevant context
         "psychoeducation",      # Needs evidence-based content
         "coping_strategy",      # Needs specific techniques
         "symptom_exploration",  # Needs pattern information

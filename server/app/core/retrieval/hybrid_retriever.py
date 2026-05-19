@@ -99,7 +99,6 @@ class HybridRetriever:
             clinical_scope=clinical_scope,
         )
         
-        print(f"[DEBUG] Raw semantic results: {len(semantic_results)}, Raw keyword: {len(keyword_results)}")
         max_kw_score = max((r.score for r in keyword_results), default=1.0) or 1.0
 
         semantic_map: dict[str, float] = {chunk.id: score for chunk, score in semantic_results}
@@ -148,7 +147,5 @@ class HybridRetriever:
 
         scored.sort(key=lambda x: (x.score, topic_alignment_score(topic, x.chunk.topic), x.chunk.id), reverse=True)
         
-        if scored:
-            print(f"[DEBUG] Top retrieval score: {scored[0].score:.4f} for topic {scored[0].chunk.topic}")
 
         return scored[:k]

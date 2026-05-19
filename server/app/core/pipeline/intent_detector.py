@@ -3,6 +3,14 @@ from __future__ import annotations
 import re
 import unicodedata
 from dataclasses import dataclass
+from typing import Optional, List
+
+# Import new semantic engine
+try:
+    from .semantic_intent_engine import SemanticIntentEngine, IntentResult as SemanticIntentResult
+    SEMANTIC_ENGINE_AVAILABLE = True
+except ImportError:
+    SEMANTIC_ENGINE_AVAILABLE = False
 
 
 @dataclass(slots=True)
@@ -184,8 +192,16 @@ class IntentDetector:
                 ("having a hard time", 0.9),
                 ("i can't cope", 0.9),
                 ("i don't know what to do", 0.8),
-                ("nobody understands", 0.9),
+                ("nobody understands", 1.0),
+                ("no one understands", 1.0),
+                ("no one gets me", 0.9),
                 ("so alone", 0.9),
+                ("lonely", 0.9),
+                ("i'm lonely", 0.9),
+                ("feeling lonely", 0.9),
+                ("isolated", 0.8),
+                ("disconnected", 0.8),
+                ("empty inside", 0.8),
                 ("i'm exhausted", 0.7),
                 ("i'm anxious", 0.7),
                 ("i'm sad", 0.7),
@@ -286,7 +302,54 @@ class IntentDetector:
         ],
     }
 
-    def detect(self, message: str, topic: str | None = None, context: dict | None = None) -> IntentResult:
+    def __init__(self):
+        """Initialize IntentDetector with optional semantic engine"""
+        self.semantic_engine = None
+        if SEMANTIC_ENGINE_AVAILABLE:
+            try:
+                self.semantic_engine = SemanticIntentEngine()
+                print("[IntentDetector] Semantic engine initialized successfully")
+            except Exception as e:
+                print(f"[IntentDetector] Warning: Could not initialize semantic engine: {e}")
+                print("[IntentDetector] Falling back to keyword-based detection only")
+    
+    def detect(self, message: str, topic: str | None = None, context: dict | None = None, use_semantic: bool = True) -> IntentResult:
+        """
+        Hybrid intent detection combining keyword and semantic approaches
+        
+        Args:
+            message: User message
+            topic: Optional topic context
+            context: Optional conversation context
+            use_semantic: Whether to use semantic engine (if available)
+        """
+        # Get conversation history from context if available
+        conversation_history = None
+        if context and "conversation_history" in context:
+            conversation_history = context["conversation_history"]
+        
+        # === HYBRID APPROACH ===
+        # 1. Always run keyword-based detection (fast, deterministic)
+        keyword_result = self._detect_keyword_based(message, topic)
+        
+        # 2. If semantic engine available and enabled, run semantic detection
+        if use_semantic and self.semantic_engine:
+            try:
+                semantic_result = self.semantic_engine.detect(
+                    message, 
+                    conversation_history=conversation_history
+                )
+                
+                # Merge results: prefer semantic if confidence is high enough
+                return self._merge_results(keyword_result, semantic_result)
+            except Exception as e:
+                print(f"[IntentDetector] Semantic detection failed: {e}")
+                return keyword_result
+        
+        return keyword_result
+    
+    def _detect_keyword_based(self, message: str, topic: str | None = None) -> IntentResult:
+        """Original keyword-based detection"""
         # Normalize: NFC → casefold → strip combining marks for cross-locale matching
         normalized = self._normalize(message)
 
@@ -334,20 +397,15 @@ class IntentDetector:
         intent_scores = self._score_all_intents(normalized)
 
         # 6. Apply question-word boost for psychoeducation.
-        # Only applies when coping_strategy doesn't already have a strong raw signal —
-        # "What are grounding techniques?" should remain coping, not flip to psychoeducation.
         if self._has_question_words(normalized):
             coping_raw = intent_scores.get("coping_strategy", 0.0)
             psychoed_raw = intent_scores.get("psychoeducation", 0.0)
-            # Skip boost when message is clearly about methods/techniques (coping dominates)
             if coping_raw < 0.25:
                 intent_scores["psychoeducation"] = psychoed_raw + 0.50
             elif psychoed_raw < coping_raw:
-                # Psychoed has weaker raw signal — small boost only
                 intent_scores["psychoeducation"] = psychoed_raw + 0.20
 
         # 6b. Mixed-intent: if message starts with question phrase, elevate psychoeducation
-        # regardless of emotional content in the rest ("What is anxiety? I feel overwhelmed")
         if self._starts_with_question(normalized):
             intent_scores["psychoeducation"] = max(
                 intent_scores.get("psychoeducation", 0.0),
@@ -358,7 +416,6 @@ class IntentDetector:
         intent_scores = {k: min(v, 1.0) for k, v in intent_scores.items()}
 
         if not intent_scores or max(intent_scores.values()) < 0.10:
-            # Default fallback
             return IntentResult(
                 primary_intent="emotional_support",
                 confidence=0.50,
@@ -381,9 +438,34 @@ class IntentDetector:
             primary_intent=best_intent,
             confidence=min(best_score, 0.95),
             category=category,
-            rationale=f"Top intent: {best_intent} (score={best_score:.2f})",
+            rationale=f"Keyword-based: {best_intent} (score={best_score:.2f})",
             secondary_intents=secondary,
         )
+    
+    def _merge_results(self, keyword_result: IntentResult, semantic_result: "SemanticIntentResult") -> IntentResult:
+        """Merge keyword and semantic results, preferring semantic when confident"""
+        # If semantic confidence is high (>0.7), prefer it
+        if semantic_result.confidence > 0.7:
+            # Convert semantic result to IntentResult format
+            return IntentResult(
+                primary_intent=semantic_result.primary_intent,
+                confidence=semantic_result.confidence,
+                category=self.INTENT_PATTERNS.get(semantic_result.primary_intent, {}).get("category", "emotional"),
+                rationale=f"Semantic: {semantic_result.reasoning}",
+                secondary_intents=[intent for intent, _ in semantic_result.alternative_intents],
+            )
+        # If keyword confidence is higher, use it
+        elif keyword_result.confidence > semantic_result.confidence:
+            return keyword_result
+        # Otherwise, prefer semantic for better context understanding
+        else:
+            return IntentResult(
+                primary_intent=semantic_result.primary_intent,
+                confidence=semantic_result.confidence,
+                category=self.INTENT_PATTERNS.get(semantic_result.primary_intent, {}).get("category", "emotional"),
+                rationale=f"Semantic (low conf): {semantic_result.reasoning}",
+                secondary_intents=[intent for intent, _ in semantic_result.alternative_intents],
+            )
 
     @staticmethod
     def _normalize(message: str) -> str:

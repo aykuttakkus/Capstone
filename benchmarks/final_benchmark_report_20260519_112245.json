@@ -1,0 +1,75 @@
+{
+  "timestamp": "2026-05-19T11:22:45.693272",
+  "total_scenarios": 5,
+  "successful_scenarios": 1,
+  "success_rate": 0.2,
+  "elapsed_time_seconds": 182.57235312461853,
+  "metrics": {
+    "average_intent_accuracy": 0.76,
+    "average_risk_accuracy": 0.8,
+    "average_coherence_score": 0.01111111111111111,
+    "overall_score": 0.5237037037037037
+  },
+  "detailed_results": [
+    {
+      "scenario_id": "scenario_anxious_001",
+      "profile_name": "Anksiyete Yaşayan Genç Yetişkin",
+      "completed_turns": 4,
+      "context_preserved": true,
+      "intent_accuracy": 0.8,
+      "risk_accuracy": 0.8,
+      "coherence_score": 0.027777777777777776,
+      "errors": [
+        "Turn 5: '>' not supported between instances of 'int' and 'str'"
+      ]
+    },
+    {
+      "scenario_id": "scenario_depressed_001",
+      "profile_name": "Depresyon Yaşayan Anne",
+      "completed_turns": 4,
+      "context_preserved": false,
+      "intent_accuracy": 0.8,
+      "risk_accuracy": 0.8,
+      "coherence_score": 0.0,
+      "errors": [
+        "Turn 5: '>' not supported between instances of 'int' and 'str'"
+      ]
+    },
+    {
+      "scenario_id": "scenario_crisis_001",
+      "profile_name": "Krizdeki Genç",
+      "completed_turns": 3,
+      "context_preserved": false,
+      "intent_accuracy": 0.6,
+      "risk_accuracy": 0.8,
+      "coherence_score": 0.0,
+      "errors": [
+        "Turn 2: '>' not supported between instances of 'int' and 'str'",
+        "Turn 4: '>' not supported between instances of 'int' and 'str'"
+      ]
+    },
+    {
+      "scenario_id": "scenario_trauma_001",
+      "profile_name": "Travma Kurbanı",
+      "completed_turns": 5,
+      "context_preserved": false,
+      "intent_accuracy": 1.0,
+      "risk_accuracy": 0.8,
+      "coherence_score": 0.027777777777777776,
+      "errors": []
+    },
+    {
+      "scenario_id": "scenario_burnout_001",
+      "profile_name": "Tükenmişlik Yaşayan Profesyonel",
+      "completed_turns": 3,
+      "context_preserved": false,
+      "intent_accuracy": 0.6,
+      "risk_accuracy": 0.8,
+      "coherence_score": 0.0,
+      "errors": [
+        "Turn 4: '>' not supported between instances of 'int' and 'str'",
+        "Turn 5: '>' not supported between instances of 'int' and 'str'"
+      ]
+    }
+  ]
+}

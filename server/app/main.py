@@ -58,7 +58,7 @@ async def lifespan(app: FastAPI):  # type: ignore
     # Startup: create tables and warm up assistant service
     async with engine.begin() as conn:
         await conn.run_sync(Base.metadata.create_all)
-    _warmup_assistant_service()
+    # _warmup_assistant_service()  # Disabled for faster startup; service is lazily initialized on first use
     yield
     # Shutdown: nothing needed currently
 

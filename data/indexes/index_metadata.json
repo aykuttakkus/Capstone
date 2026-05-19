@@ -1,0 +1,27 @@
+{
+  "version": "2.0",
+  "created": "2026-05-19T10:34:24.432028",
+  "total_chunks": 6302,
+  "indexes": {
+    "psychoeducation_index": {
+      "description": "Educational content on mental health topics",
+      "chunk_count": 4788,
+      "file": "psychoeducation_index_chunks.jsonl"
+    },
+    "coping_skills_index": {
+      "description": "Practical techniques, exercises, and coping skills",
+      "chunk_count": 1514,
+      "file": "coping_skills_index_chunks.jsonl"
+    },
+    "safety_crisis_index": {
+      "description": "Crisis support, safety planning, emergency resources",
+      "chunk_count": 1072,
+      "file": "safety_crisis_index_chunks.jsonl"
+    },
+    "methodology_index": {
+      "description": "Technical documentation and RAG methodology",
+      "chunk_count": 8,
+      "file": "methodology_index_chunks.jsonl"
+    }
+  }
+}

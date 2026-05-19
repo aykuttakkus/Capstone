@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, String, DateTime, ForeignKey, Text, Float, Boolean
+from sqlalchemy import Column, Integer, String, DateTime, ForeignKey, Text, Float, Boolean, JSON
 from sqlalchemy.sql import func
 from server.app.core.database import Base
 
@@ -102,6 +102,29 @@ class SessionRiskState(Base):
     escalation_recommended = Column(Boolean, nullable=False, default=False)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     updated_at = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
+
+
+class EscalationLog(Base):
+    """
+    Audit log for every safety escalation event.
+
+    Required by GDPR Article 9 (health data audit trail) and EU AI Act
+    (August 2026) for high-risk AI system logging with ≥6 months retention.
+    """
+    __tablename__ = "escalation_logs"
+
+    id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=False, index=True)
+    session_id = Column(String, nullable=True, index=True)
+    timestamp = Column(DateTime(timezone=True), server_default=func.now(), nullable=False, index=True)
+    risk_level = Column(String, nullable=False, index=True)      # CRISIS / HIGH / MEDIUM
+    risk_indicators = Column(JSON, nullable=True)                # ["suicide_mention", ...]
+    action_taken = Column(String, nullable=False)                # crisis_protocol / notify_support / log_for_review
+    conversation_excerpt = Column(Text, nullable=True)           # last user message (max 500 chars, redacted)
+    escalation_reason = Column(Text, nullable=True)
+    resolved = Column(Boolean, nullable=False, default=False)
+    resolved_at = Column(DateTime(timezone=True), nullable=True)
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
 
 
 class MemorySegment(Base):

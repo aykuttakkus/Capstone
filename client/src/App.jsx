@@ -171,15 +171,18 @@ const truncateText = (value, length = 42) => {
 };
 
 const mapSessionItems = (items = []) =>
-  items.map((item) => ({
-    id: item.id,
-    title: truncateText(item.title || item.summary || item.topic || 'Session'),
-    date: formatRelativeTime(item.last_message_at || item.created_at),
-    safetyMode: item.safety_mode,
-    status: item.status,
-    topic: item.topic,
-    summary: item.summary,
-  }));
+  items
+    .map((item) => ({
+      id: item.id,
+      title: truncateText(item.title || item.summary || item.topic || 'Session'),
+      date: formatRelativeTime(item.last_message_at || item.created_at),
+      sortKey: new Date(item.last_message_at || item.created_at || 0).getTime() || 0,
+      safetyMode: item.safety_mode,
+      status: item.status,
+      topic: item.topic,
+      summary: item.summary,
+    }))
+    .sort((a, b) => b.sortKey - a.sortKey);
 
 const getErrorMessage = (error, fallback) =>
   error?.response?.data?.detail || error?.message || fallback;
@@ -354,8 +357,8 @@ function App() {
       api.get('/sessions/', { params: { status: 'archived', limit: 20 } }),
     ]);
 
-    setHistory(mapSessionItems(activeRes.data));
-    setArchivedHistory(mapSessionItems(archivedRes.data));
+      setHistory(mapSessionItems(activeRes.data));
+      setArchivedHistory(mapSessionItems(archivedRes.data));
   }, []);
 
   const loadAppData = useCallback(async () => {
@@ -672,7 +675,7 @@ function App() {
       }
       
       const serverMsg = error?.response?.data?.detail;
-      const errorMsg = serverMsg ? `Error: ${serverMsg}` : (error?.message === 'Network Error' ? 'Bağlantı Hatası: Sunucuya ulaşılamıyor veya CORS engeli var.' : error.message);
+      const errorMsg = serverMsg ? `Error: ${serverMsg}` : (error?.message === 'Network Error' ? 'Connection error: the server is unreachable or CORS is blocking the request.' : error.message);
       setScreeningError(errorMsg);
     } finally {
       setIsLoading(false);
@@ -1069,7 +1072,7 @@ function App() {
           <div className="sidebar-actions">
             <button type="button" className="sidebar-action-btn" onClick={startNewSession}>
               <SquarePen size={22} />
-              <span>Yeni sohbet</span>
+              <span>New chat</span>
             </button>
             <form className="sidebar-search" onSubmit={handleSessionSearchSubmit}>
               <input
@@ -1295,27 +1298,12 @@ function App() {
 
         <section className="chat-viewport">
           <div className="chat-max-width">
-            {messages.length === 0 && (stage === 'chat' || isPreviewMode) && (
-              <div className="empty-state animate-fade-in">
-                <div className="empty-state-icon">
-                  <Brain size={30} className="text-accent" />
-                </div>
-                <h2>{isPreviewMode ? `${APP_NAME} is waiting for you.` : 'What shall we talk about?'}</h2>
-                <p>
-                  {isPreviewMode
-                    ? 'Chat area is ready. Please log in to your secure session to continue.'
-                    : 'Keep it short, and I will answer clearly.'}
-                </p>
-              </div>
-            )}
+            {messages.length === 0 && (stage === 'chat' || isPreviewMode) && null}
 
             {messages.map((msg, idx) => (
               msg.role === 'user' ? (
                 <div key={idx} className="message-row user">
                   <div className="message-content">
-                    <div className="font-semibold text-xs mb-1 uppercase tracking-wider text-muted">
-                      You
-                    </div>
                     <div className="prose prose-invert max-w-none text-slate-200">{msg.content}</div>
                   </div>
                   <div className="avatar avatar-user" aria-hidden="true">
@@ -1328,9 +1316,6 @@ function App() {
                     <Sparkles size={18} />
                   </div>
                   <div className="message-content">
-                    <div className="font-semibold text-xs mb-1 uppercase tracking-wider text-muted">
-                      {intakePhase ? `${APP_NAME} Support Intake` : `${APP_NAME} (AI)`}
-                    </div>
                     {msg.data?.status === 'crisis' && (
                       <div className="crisis-alert">
                         <div className="flex items-center gap-2 mb-2 font-bold">
@@ -1397,10 +1382,12 @@ function App() {
             {isLoading && (
               <div className="message-row assistant">
                 <div className="avatar avatar-assistant">
-                  <Sparkles size={18} className="animate-spin" />
+                  <Sparkles size={18} />
                 </div>
-                <div className="message-content text-muted italic flex items-center gap-2">
-                  {intakePhase ? 'Calma is reflecting...' : 'Searching support index...'}
+                <div className="message-content typing-indicator" aria-label="Assistant is typing">
+                  <span className="typing-dot" />
+                  <span className="typing-dot" />
+                  <span className="typing-dot" />
                 </div>
               </div>
             )}
@@ -2223,7 +2210,7 @@ function App() {
             disabled={sessionActionBusyId === openSessionMenuId}
           >
             <Archive size={22} />
-            <span>Arşivle</span>
+            <span>Archive</span>
           </button>
           <button
             type="button"
@@ -2232,7 +2219,7 @@ function App() {
             disabled={sessionActionBusyId === openSessionMenuId}
           >
             <Trash2 size={22} />
-            <span>Sil</span>
+            <span>Delete</span>
           </button>
         </div>
       )}
