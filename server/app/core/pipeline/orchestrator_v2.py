@@ -15,6 +15,8 @@ from server.app.core.pipeline.response_modes import ResponseMode, ResponseModeCo
 from server.app.core.pipeline.context_manager import ContextManager, ConversationContext
 from server.app.core.pipeline.intent_detector import IntentDetector
 from server.app.core.pipeline.risk_state import RiskState
+from server.app.core.pipeline.rag_decision import RAGDecisionModule
+from server.app.core.pipeline.escalation_logic import HumanEscalationLogic
 
 
 @dataclass(slots=True)
@@ -58,6 +60,8 @@ class PipelineOrchestrator:
         self.quality_critic = quality_critic
         self.fallback_handler = fallback_handler
         self.safety_guardian = safety_guardian or SafetyGuardian()
+        self.rag_decision = RAGDecisionModule()
+        self.escalation_logic = HumanEscalationLogic()
         self.mode_selector = ResponseModeSelector()
         self.context_manager = ContextManager()
         self.intent_detector = IntentDetector()
@@ -100,8 +104,14 @@ class PipelineOrchestrator:
         # Step 4: Intent Detection
         # (Already done when PipelineContext is created with intent)
 
-        # Step 5: RAG Decision (currently always retrieve if available)
-        rag_decision = self._make_rag_decision(context)
+        # Step 5: RAG Decision (intelligent retrieval decision)
+        rag_decision = self.rag_decision.decide(
+            intent=context.intent,
+            topic=context.topic,
+            conversation_length=len(context.conversation_history),
+            risk_level=context.risk_level,
+            has_recent_retrieval=False,  # Could track from session
+        )
 
         # Step 6: Evidence Retrieval (handled by response generation)
 
@@ -119,7 +129,7 @@ class PipelineOrchestrator:
             quality_score = 0.8
         else:
             response = self._generate_response(
-                context, response_mode, llm_available and rag_decision["use_rag"], retrieval_available
+                context, response_mode, llm_available and rag_decision.use_rag, retrieval_available
             )
 
             # Step 9: Response Quality Critic
@@ -150,7 +160,20 @@ class PipelineOrchestrator:
                 warnings.append(f"Dependency concern: {dep_result.severity} - {dep_result.recommendation}")
                 response = self._revise_response(response, dep_result.recommendation)
 
-        # Step 12: Fallback Handler (already integrated in _generate_response)
+        # Step 12: Human Escalation Logic
+        escalation_decision = self.escalation_logic.evaluate(
+            risk_level=context.risk_level,
+            distress_signals=[s.category for s in distress_analysis.signals] if response_mode != ResponseMode.CRISIS else ["crisis"],
+            conversation_length=len(context.conversation_history),
+            quality_score=quality_score if response_mode != ResponseMode.CRISIS else 1.0,
+            safety_concerns=warnings,
+        )
+        if escalation_decision.level.value != "none":
+            warnings.append(f"Escalation: {escalation_decision.reason}")
+            if escalation_decision.level.value == "immediate":
+                context.risk_state.activate_crisis_protocol()
+
+        # Step 12.5: Fallback Handler (already integrated in _generate_response)
 
         # Step 13: Final Response (PipelineResult)
 
@@ -264,15 +287,6 @@ class PipelineOrchestrator:
         }
         return mode_map.get(mode, "none")
 
-    def _make_rag_decision(self, context: PipelineContext) -> dict[str, Any]:
-        """Decide whether to use RAG based on context."""
-        # Currently always use RAG if available
-        # Future: add intelligent decision logic
-        return {
-            "use_rag": True,
-            "retrieve_amount": 3,
-            "reasoning": "Standard retrieval for response grounding",
-        }
 
     def _update_memory(self, context: PipelineContext, response: str, mode: ResponseMode) -> None:
         """Update conversation memory with this exchange."""

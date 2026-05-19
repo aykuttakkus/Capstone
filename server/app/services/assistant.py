@@ -40,6 +40,8 @@ from server.app.core.pipeline.orchestrator_v2 import PipelineOrchestrator, Pipel
 from server.app.core.pipeline.context_manager import ContextManager
 from server.app.core.pipeline.intent_detector import IntentDetector
 from server.app.core.pipeline.risk_state import RiskState
+from server.app.core.pipeline.rag_decision import RAGDecisionModule
+from server.app.core.pipeline.escalation_logic import HumanEscalationLogic
 from server.app.utils.audit_logger import ClinicalAuditLogger
 from server.app.models.sql.models import User, Memory, Conversation, ChatSession
 from server.app.services.journal import journal_service
