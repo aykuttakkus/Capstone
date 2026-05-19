@@ -36,6 +36,7 @@ from server.app.core.agents.distress_monitor import SubtleDistressMonitor
 from server.app.core.agents.dependency_critic import DependencyCritic
 from server.app.core.agents.quality_critic import QualityCritic
 from server.app.core.agents.fallback_handler import FallbackHandler
+from server.app.core.pipeline.orchestrator_v2 import PipelineOrchestrator, PipelineContext
 from server.app.utils.audit_logger import ClinicalAuditLogger
 from server.app.models.sql.models import User, Memory, Conversation, ChatSession
 from server.app.services.journal import journal_service
@@ -73,6 +74,15 @@ class AssistantService:
         self.dependency_critic = DependencyCritic()
         self.quality_critic = QualityCritic()
         self.fallback_handler = FallbackHandler()
+
+        # Phase 2: Pipeline orchestration
+        self.pipeline_orchestrator = PipelineOrchestrator(
+            orchestrator=self.orchestrator,
+            distress_monitor=self.distress_monitor,
+            dependency_critic=self.dependency_critic,
+            quality_critic=self.quality_critic,
+            fallback_handler=self.fallback_handler,
+        )
 
     # ------------------------------------------------------------------
     # Persistence Helpers
