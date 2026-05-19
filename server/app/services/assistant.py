@@ -1,10 +1,19 @@
 from __future__ import annotations
 
+from dataclasses import dataclass
 from functools import lru_cache
 from fastapi import BackgroundTasks
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
 from server.app.utils.privacy import encrypt_clinical_data, decrypt_clinical_data
+
+
+@dataclass(slots=True)
+class SentimentProfile:
+    label: str
+    urgency: int
+    empathy_required: bool
+    rationale: str
 
 from server.app.core.config import ENABLE_RERANKER, FAISS_INDEX_PATH, FAISS_METADATA_PATH, RERANK_MAX_CHARS, RERANK_TOP_K, TOP_K
 from server.app.models.schemas.chat import ChatResponse, SourceReference
@@ -22,9 +31,7 @@ from server.app.core.retrieval.retriever import ScoredChunk
 from server.app.core.agents.orchestrator import Orchestrator
 from server.app.core.agents.response_planner import ResponsePlan
 from server.app.core.agents.safety_guardian import SafetyAnalysis
-from server.app.core.agents.sentiment_agent import SentimentProfile
 from server.app.core.agents.memory_agent import MemoryAgent
-from server.app.core.agents.supervisor import SupervisorAgent
 from server.app.utils.audit_logger import ClinicalAuditLogger
 from server.app.models.sql.models import User, Memory, Conversation, ChatSession
 from server.app.services.journal import journal_service
@@ -54,7 +61,6 @@ class AssistantService:
         self.generator = AnswerGenerator(llm_client=OllamaClient())
         self.orchestrator = Orchestrator()
         self.memory_agent = MemoryAgent()
-        self.supervisor = SupervisorAgent()
         self.audit_logger = ClinicalAuditLogger()
         self.nuggetizer = nuggetizer
 

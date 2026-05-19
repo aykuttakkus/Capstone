@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy import text
@@ -52,7 +53,21 @@ from server.app.services.flows.screening import GAD7_QUESTIONS, PHQ9_QUESTIONS, 
 from server.app.services.assistant import get_service
 
 
-app = FastAPI(title=f"{APP_NAME} RAG API")
+@asynccontextmanager
+async def lifespan(app: FastAPI):  # type: ignore
+    # Startup: create tables and warm up assistant service
+    async with engine.begin() as conn:
+        await conn.run_sync(Base.metadata.create_all)
+    _warmup_assistant_service()
+    yield
+    # Shutdown: nothing needed currently
+
+
+def _warmup_assistant_service() -> None:
+    get_service()
+
+
+app = FastAPI(title=f"{APP_NAME} RAG API", lifespan=lifespan)
 
 app.add_middleware(
     CORSMiddleware,
@@ -97,16 +112,6 @@ def _local_index_ready() -> bool:
         return False
 
 
-@app.on_event("startup")
-async def create_tables() -> None:
-    async with engine.begin() as conn:
-        await conn.run_sync(Base.metadata.create_all)
-    warmup_assistant_service()
-
-
-def warmup_assistant_service() -> None:
-    # Preload the singleton so the first chat request does not pay model init cost.
-    get_service()
 
 
 @app.get("/api/config", response_model=AppConfigResponse)

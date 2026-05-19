@@ -2,8 +2,15 @@ from __future__ import annotations
 
 from dataclasses import dataclass, field
 
-from server.app.core.agents.sentiment_agent import SentimentProfile
 from server.app.models.sql.models import MemoryReflection, MemorySegment, UserProfile
+
+
+@dataclass(slots=True)
+class SentimentProfile:
+    label: str
+    urgency: int
+    empathy_required: bool
+    rationale: str
 
 
 @dataclass(slots=True)

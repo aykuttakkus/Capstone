@@ -5,8 +5,7 @@ from dataclasses import dataclass
 import pytest
 from sqlalchemy import select
 
-from server.app.core.agents.sentiment_agent import SentimentProfile
-from server.app.core.generation.generator import AnswerGenerator
+from server.app.core.generation.generator import AnswerGenerator, SentimentProfile
 from server.app.core.retrieval.evidence_gate import EvidenceGate
 import server.app.services.assistant as assistant_module
 from server.app.core.retrieval.reranker import EvidenceReranker

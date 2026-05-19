@@ -3,7 +3,14 @@ from __future__ import annotations
 from dataclasses import dataclass
 
 from server.app.core.agents.response_planner import ResponsePlan
-from server.app.core.agents.sentiment_agent import SentimentProfile
+
+
+@dataclass(slots=True)
+class SentimentProfile:
+    label: str
+    urgency: int
+    empathy_required: bool
+    rationale: str
 from server.app.core.generation.llm import OllamaClient
 from server.app.core.retrieval.retriever import ScoredChunk
 from server.app.core.safety.policy import SafetyDecision
